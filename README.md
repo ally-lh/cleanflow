@@ -164,20 +164,59 @@ cleanflow/
 
 ### Workflow
 
+**Starting new work**
+
 ```bash
-# Before starting work — get the latest changes
-git pull
+# Switch to dev and get the latest changes first
+git checkout dev
+git pull origin dev
 
-# Create a branch for your feature
+# Create your branch off dev
 git checkout -b your-name/feature-name
+```
 
-# Make changes, then commit
+**Saving your work**
+
+```bash
 git add .
-git commit -m "describe what you did"
+git commit -m "short description of what you changed"
+```
 
-# Push and open a pull request
+**Before you push — sync with dev to avoid conflicts**
+
+```bash
+# 1. Save any uncommitted changes first
+git add .
+git commit -m "wip: your message"
+
+# 2. Pull the latest dev into your branch
+git fetch origin
+git merge origin/dev
+
+# 3. If there are merge conflicts, Git will tell you which files.
+#    Open those files — look for sections like this:
+#
+#    <<<<<<< HEAD
+#    your changes
+#    =======
+#    teammate's changes
+#    >>>>>>> origin/dev
+#
+#    Edit the file to keep the correct version (sometimes both, sometimes one).
+#    Delete the <<<<, ====, >>>> markers when done.
+
+# 4. After resolving all conflicts, mark them as resolved
+git add .
+git commit -m "merge dev into your-name/feature-name"
+
+# 5. Now push
 git push origin your-name/feature-name
 ```
+
+**Avoiding conflicts in the first place**
+- Pull from `dev` at the start of every work session, not just when you're done
+- Tell teammates in the group chat before editing shared files like `prisma/schema.prisma` or `src/types/constants.ts`
+- Keep branches short-lived — merge and delete them once the feature is done
 
 ---
 
