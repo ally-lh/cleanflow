@@ -1,0 +1,483 @@
+// CleanFlow — Prisma Schema
+// Dry Cleaning & Laundry Digital Platform
+// ──────────────────────────────────────────
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ──────────────────────────────────────────
+// ENUMS
+// ──────────────────────────────────────────
+
+enum UserRole {
+  CUSTOMER
+  ADMIN
+  DRIVER
+  SUPER_ADMIN
+}
+
+enum OrderStatus {
+  DRAFT
+  PHOTO_ANALYZED
+  PENDING_CONFIRMATION
+  PENDING_PICKUP_SCHEDULING
+  PICKUP_SCHEDULED
+  PICKED_UP
+  RECEIVED_AT_STORE
+  WASHING
+  DRYING
+  PRESSING_OR_FINISHING
+  READY_FOR_COLLECTION
+  OUT_FOR_DELIVERY
+  COMPLETED
+  CANCELLED
+}
+
+enum CollectionMethod {
+  SELF_COLLECTION
+  DELIVERY
+}
+
+enum ServiceType {
+  WASH_AND_FOLD
+  DRY_CLEANING
+  IRONING_ONLY
+  WASH_AND_IRON
+  EXPRESS
+}
+
+enum ClothingCategory {
+  SHIRT
+  PANTS
+  DRESS
+  SUIT_JACKET
+  SUIT_PANTS
+  COAT
+  SWEATER
+  SHORTS
+  SKIRT
+  UNDERWEAR
+  SOCKS
+  BEDSHEET
+  TOWEL
+  CURTAIN
+  OTHER
+}
+
+enum PickupMethod {
+  CUSTOMER_DROPOFF
+  SCHEDULED_PICKUP
+}
+
+enum SlotStatus {
+  AVAILABLE
+  BOOKED
+  CANCELLED
+  COMPLETED
+}
+
+enum ScheduleRequestStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+enum InvoiceStatus {
+  DRAFT_ESTIMATED
+  PENDING_VERIFICATION
+  CONFIRMED
+  PAID
+  CANCELLED
+}
+
+enum NotificationType {
+  ORDER_CREATED
+  ORDER_STATUS_CHANGED
+  PICKUP_SCHEDULED
+  READY_FOR_COLLECTION
+  OUT_FOR_DELIVERY
+  INVOICE_READY
+  GENERAL
+}
+
+// ──────────────────────────────────────────
+// AUTH — NextAuth.js v5 required models
+// ──────────────────────────────────────────
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ──────────────────────────────────────────
+// USERS & PROFILES
+// ──────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  role          UserRole  @default(CUSTOMER)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts        Account[]
+  sessions        Session[]
+  customerProfile CustomerProfile?
+  adminProfile    AdminProfile?
+  driverProfile   Driver?
+}
+
+model CustomerProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  addresses Address[]
+  orders    Order[]
+}
+
+model AdminProfile {
+  id         String   @id @default(cuid())
+  userId     String   @unique
+  staffCode  String?
+  department String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Driver {
+  id             String    @id @default(cuid())
+  userId         String    @unique
+  licenseNumber  String?
+  vehicleType    String?
+  vehiclePlate   String?
+  isActive       Boolean   @default(true)
+  // Placeholder: live location tracking (future GPS integration)
+  lastLat        Float?
+  lastLng        Float?
+  lastLocationAt DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  user           User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  deliveries     DeliveryRequest[]
+  pickups        PickupRequest[]
+  availability   WorkerAvailability[]
+}
+
+// ──────────────────────────────────────────
+// ADDRESS & GEO
+// ──────────────────────────────────────────
+
+model Address {
+  id           String   @id @default(cuid())
+  customerId   String
+  label        String?  // e.g. "Home", "Office"
+  streetLine1  String
+  streetLine2  String?
+  city         String
+  state        String?
+  postalCode   String
+  country      String   @default("Singapore")
+  // Geo coordinates — future geocoding integration
+  lat          Float?
+  lng          Float?
+  isDefault    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  customer         CustomerProfile   @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  pickupRequests   PickupRequest[]
+  deliveryRequests DeliveryRequest[]
+  orders           Order[]
+}
+
+// ──────────────────────────────────────────
+// ORDERS — Core domain model
+// ──────────────────────────────────────────
+
+model Order {
+  id               String            @id @default(cuid())
+  orderNumber      String            @unique // human-readable: CF-2024-0001
+  customerId       String
+  addressId        String?
+  status           OrderStatus       @default(DRAFT)
+  serviceType      ServiceType       @default(WASH_AND_FOLD)
+  pickupMethod     PickupMethod?
+  collectionMethod CollectionMethod?
+  specialNotes     String?
+  // Timestamps for analytics
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+  confirmedAt      DateTime?
+  pickedUpAt       DateTime?
+  receivedAt       DateTime?
+  completedAt      DateTime?
+
+  customer       CustomerProfile      @relation(fields: [customerId], references: [id])
+  address        Address?             @relation(fields: [addressId], references: [id])
+  items          OrderItem[]
+  uploadedImages UploadedImage[]
+  aiAnalysis     AIAnalysis?
+  pickupRequest  PickupRequest?
+  deliveryRequest DeliveryRequest?
+  invoice        Invoice?
+  statusHistory  OrderStatusHistory[]
+  notifications  NotificationLog[]
+}
+
+model OrderItem {
+  id           String           @id @default(cuid())
+  orderId      String
+  category     ClothingCategory
+  description  String?
+  quantity     Int              @default(1)
+  unitPrice    Float            @default(0)
+  totalPrice   Float            @default(0)
+  // Was this item AI-detected or manually added?
+  isAiDetected Boolean          @default(false)
+  confidence   Float?           // AI confidence score 0–1
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model OrderStatusHistory {
+  id        String      @id @default(cuid())
+  orderId   String
+  status    OrderStatus
+  notes     String?
+  changedBy String?     // user ID or "system"
+  createdAt DateTime    @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────────────────────────────────
+// AI ANALYSIS
+// ──────────────────────────────────────────
+
+model UploadedImage {
+  id        String   @id @default(cuid())
+  orderId   String
+  url       String   // Stored image URL
+  fileName  String
+  fileSize  Int?
+  mimeType  String?
+  createdAt DateTime @default(now())
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model AIAnalysis {
+  id                   String    @id @default(cuid())
+  orderId              String    @unique
+  // Raw output stored as JSON for flexibility
+  rawResult            Json
+  totalEstimatedPieces Int
+  detectedItemsSummary String?
+  previewWarnings      String[]
+  modelUsed            String    @default("mock-v1")
+  analyzedAt           DateTime  @default(now())
+  customerConfirmed    Boolean   @default(false)
+  customerConfirmedAt  DateTime?
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────────────────────────────────
+// SCHEDULING
+// ──────────────────────────────────────────
+
+model PickupRequest {
+  id                String                @id @default(cuid())
+  orderId           String                @unique
+  addressId         String
+  driverId          String?
+  requestedDate     DateTime
+  requestedSlot     String                // e.g. "09:00-11:00"
+  status            ScheduleRequestStatus @default(PENDING)
+  adminNotes        String?
+  estimatedDistance Float?
+  estimatedDuration Int?                  // minutes
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  scheduledAt       DateTime?
+
+  order         Order          @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  address       Address        @relation(fields: [addressId], references: [id])
+  driver        Driver?        @relation(fields: [driverId], references: [id])
+  routeEstimate RouteEstimate?
+}
+
+model DeliveryRequest {
+  id                String                @id @default(cuid())
+  orderId           String                @unique
+  addressId         String
+  driverId          String?
+  requestedDate     DateTime?
+  requestedSlot     String?
+  status            ScheduleRequestStatus @default(PENDING)
+  deliveryFee       Float                 @default(0)
+  adminNotes        String?
+  estimatedDistance Float?
+  estimatedDuration Int?
+  createdAt         DateTime              @default(now())
+  updatedAt         DateTime              @updatedAt
+  scheduledAt       DateTime?
+  deliveredAt       DateTime?
+
+  order         Order           @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  address       Address         @relation(fields: [addressId], references: [id])
+  driver        Driver?         @relation(fields: [driverId], references: [id])
+  routeEstimate RouteEstimate?
+}
+
+model ScheduleSlot {
+  id          String     @id @default(cuid())
+  date        DateTime
+  startTime   String
+  endTime     String
+  label       String
+  maxCapacity Int        @default(3)
+  bookedCount Int        @default(0)
+  status      SlotStatus @default(AVAILABLE)
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+}
+
+model WorkerAvailability {
+  id        String   @id @default(cuid())
+  driverId  String
+  date      DateTime
+  startTime String
+  endTime   String
+  isBooked  Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  driver Driver @relation(fields: [driverId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────────────────────────────────
+// PRICING
+// ──────────────────────────────────────────
+
+model PriceRule {
+  id          String           @id @default(cuid())
+  category    ClothingCategory
+  serviceType ServiceType
+  unitPrice   Float
+  description String?
+  isActive    Boolean          @default(true)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([category, serviceType])
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  orderId        String        @unique
+  status         InvoiceStatus @default(DRAFT_ESTIMATED)
+  estimatedTotal Float
+  confirmedTotal Float?
+  deliveryFee    Float         @default(0)
+  discount       Float         @default(0)
+  finalTotal     Float?
+  currency       String        @default("SGD")
+  notes          String?
+  estimatedAt    DateTime      @default(now())
+  confirmedAt    DateTime?
+  paidAt         DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+// ──────────────────────────────────────────
+// ROUTE ESTIMATES (logistics placeholder)
+// ──────────────────────────────────────────
+
+model RouteEstimate {
+  id                String   @id @default(cuid())
+  pickupRequestId   String?  @unique
+  deliveryRequestId String?  @unique
+  originLat         Float?
+  originLng         Float?
+  originAddress     String?
+  destLat           Float?
+  destLng           Float?
+  destAddress       String?
+  distanceKm        Float?
+  durationMinutes   Int?
+  rawResponse       Json?    // future routing API response
+  calculatedAt      DateTime @default(now())
+
+  pickupRequest   PickupRequest?   @relation(fields: [pickupRequestId], references: [id])
+  deliveryRequest DeliveryRequest? @relation(fields: [deliveryRequestId], references: [id])
+}
+
+// ──────────────────────────────────────────
+// NOTIFICATIONS
+// ──────────────────────────────────────────
+
+model NotificationLog {
+  id        String           @id @default(cuid())
+  orderId   String?
+  userId    String?
+  type      NotificationType
+  channel   String           @default("in-app")
+  message   String
+  sentAt    DateTime         @default(now())
+  delivered Boolean          @default(false)
+
+  order Order? @relation(fields: [orderId], references: [id])
+}
