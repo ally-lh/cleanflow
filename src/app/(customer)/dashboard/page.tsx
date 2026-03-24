@@ -2,75 +2,165 @@ import { getMyOrdersAction } from "@/actions/orders";
 import { requireAuth } from "@/lib/auth/session";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import OrderStatusBadge from "@/components/shared/OrderStatusBadge";
 import { ORDER_STATUS_LABELS, SERVICE_TYPE_LABELS } from "@/types/constants";
-import { WashingMachine } from "lucide-react";
+import { ArrowRight, CalendarClock, PackageCheck, Shirt, Sparkles } from "lucide-react";
+
+type ActiveRental = {
+  id: string;
+  itemName: string;
+  returnDate: string;
+};
 
 export default async function DashboardPage() {
   const user = await requireAuth();
   const orders = await getMyOrdersAction();
+  const activeRentals: ActiveRental[] = [];
 
   const activeOrders = orders.filter(
     (o) => o.status !== "COMPLETED" && o.status !== "CANCELLED"
   );
-  const pastOrders = orders.filter(
-    (o) => o.status === "COMPLETED" || o.status === "CANCELLED"
-  );
+  const recentOrders = orders.slice(0, 3);
 
   return (
-    <div className="space-y-8">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            Welcome back, {user.name?.split(" ")[0]}!
-          </h1>
-          <p className="text-gray-500 mt-1">
-            {activeOrders.length > 0
-              ? `You have ${activeOrders.length} active order${activeOrders.length > 1 ? "s" : ""}.`
-              : "No active orders right now."}
-          </p>
-        </div>
-        <Link href="/orders/new"><Button>New Order</Button></Link>
-      </div>
-
-      {/* Active Orders */}
-      {activeOrders.length > 0 && (
-        <section>
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Active Orders</h2>
-          <div className="space-y-3">
-            {activeOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
-            ))}
+    <div className="space-y-6">
+      <Card className="rounded-3xl border-border/70 bg-card/90 py-0 shadow-sm">
+        <CardHeader className="space-y-4 px-5 py-5 sm:px-6 sm:py-6">
+          <div>
+            <CardTitle className="text-2xl font-semibold tracking-tight text-foreground">
+              Hello, {user.name?.split(" ")[0] ?? "there"}
+            </CardTitle>
+            <CardDescription className="mt-1 text-sm">
+              Plan your laundry, rent outfits, and keep track of everything in one place.
+            </CardDescription>
           </div>
-        </section>
-      )}
 
-      {/* Empty state */}
-      {orders.length === 0 && (
-        <Card className="border-dashed">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <WashingMachine className="w-12 h-12 text-gray-300 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-700 mb-2">
-              No orders yet
-            </h3>
-            <p className="text-gray-500 mb-6 max-w-sm">
-              Place your first order — upload a photo of your laundry and our AI
-              will estimate the count and cost.
-            </p>
-            <Link href="/orders/new"><Button>Place first order</Button></Link>
+          <div className="flex flex-wrap gap-2">
+            <div className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
+              {activeOrders.length} ongoing order{activeOrders.length === 1 ? "" : "s"}
+            </div>
+            <div className="rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-medium text-muted-foreground">
+              {activeRentals.length} ongoing rental{activeRentals.length === 1 ? "" : "s"}
+            </div>
+          </div>
+        </CardHeader>
+      </Card>
+
+      <section className="grid gap-4 sm:grid-cols-2">
+        <Card className="gap-2 rounded-2xl border-border/70 bg-card/90 py-0 shadow-sm">
+          <CardHeader className="px-5 pt-5 pb-2">
+            <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
+              <CalendarClock className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-lg">Schedule Laundry</CardTitle>
+            <CardDescription>
+              Book pickup and let us handle washing, ironing, and delivery.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-end px-5 pt-0 pb-5">
+            <Link href="/orders/new" className="inline-flex">
+              <Button className="rounded-xl">
+                Start Laundry Order
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </Link>
           </CardContent>
         </Card>
-      )}
 
-      {/* Past Orders */}
-      {pastOrders.length > 0 && (
+        <Card className="gap-2 rounded-2xl border-border/70 bg-card/90 py-0 shadow-sm">
+          <CardHeader className="px-5 pt-5 pb-2">
+            <div className="mb-2 inline-flex h-10 w-10 items-center justify-center rounded-xl bg-chart-1/15 text-chart-2">
+              <Shirt className="h-5 w-5" />
+            </div>
+            <CardTitle className="text-lg">Rent Clothes</CardTitle>
+            <CardDescription>
+              Browse curated looks and get AI suggestions for your event.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-end px-5 pt-0 pb-5">
+            <Link href="/rent" className="inline-flex">
+              <Button variant="outline" className="rounded-xl">
+                Browse Rentals
+                <ArrowRight className="ml-1.5 h-4 w-4" />
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </section>
+
+      <section className="grid gap-4 lg:grid-cols-2">
+        <Card className="rounded-2xl border-border/70 bg-card/90 py-0 shadow-sm">
+          <CardHeader className="px-5 py-5">
+            <CardTitle className="text-lg">Ongoing Orders</CardTitle>
+            <CardDescription>Track your active laundry orders.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 px-5 pb-5">
+            {activeOrders.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border/70 bg-background/70 p-5 text-center">
+                <PackageCheck className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">No ongoing orders right now.</p>
+              </div>
+            ) : (
+              activeOrders.slice(0, 3).map((order) => (
+                <CompactOrderCard key={order.id} order={order} />
+              ))
+            )}
+
+            <Link href="/orders/new" className="inline-flex">
+              <Button variant="ghost" className="rounded-xl px-0 text-primary hover:text-primary/80">
+                Schedule new laundry
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl border-border/70 bg-card/90 py-0 shadow-sm">
+          <CardHeader className="px-5 py-5">
+            <CardTitle className="text-lg">Ongoing Rentals</CardTitle>
+            <CardDescription>Manage your currently rented outfits.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3 px-5 pb-5">
+            {activeRentals.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-border/70 bg-background/70 p-5 text-center">
+                <Sparkles className="mx-auto mb-2 h-6 w-6 text-muted-foreground" />
+                <p className="text-sm text-muted-foreground">No active rentals yet.</p>
+              </div>
+            ) : (
+              activeRentals.map((rental) => (
+                <div
+                  key={rental.id}
+                  className="rounded-xl border border-border/70 bg-background/80 p-3"
+                >
+                  <p className="text-sm font-semibold text-foreground">{rental.itemName}</p>
+                  <p className="mt-0.5 text-xs text-muted-foreground">Return by {rental.returnDate}</p>
+                </div>
+              ))
+            )}
+
+            <Link href="/rent" className="inline-flex">
+              <Button variant="ghost" className="rounded-xl px-0 text-primary hover:text-primary/80">
+                Browse rental catalog
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </section>
+
+      {recentOrders.length > 0 && (
         <section>
-          <h2 className="text-lg font-semibold text-gray-700 mb-3">Order History</h2>
+          <h2 className="mb-3 text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Recent Activity
+          </h2>
           <div className="space-y-3">
-            {pastOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
+            {recentOrders.map((order) => (
+              <CompactOrderCard key={order.id} order={order} />
             ))}
           </div>
         </section>
@@ -79,40 +169,34 @@ export default async function DashboardPage() {
   );
 }
 
-// ──────────────────────────────────────────
-// ORDER CARD COMPONENT (inline, page-specific)
-// ──────────────────────────────────────────
-
-function OrderCard({ order }: { order: Awaited<ReturnType<typeof getMyOrdersAction>>[number] }) {
-  const itemCount = order.items.reduce((s, i) => s + i.quantity, 0);
+function CompactOrderCard({
+  order,
+}: {
+  order: Awaited<ReturnType<typeof getMyOrdersAction>>[number];
+}) {
+  const itemCount = order.items.reduce((sum, item) => sum + item.quantity, 0);
   const total = order.invoice?.finalTotal ?? order.invoice?.estimatedTotal;
 
   return (
     <Link href={`/orders/${order.id}`}>
-      <Card className="hover:shadow-md transition-shadow cursor-pointer">
-        <CardContent className="flex items-center justify-between py-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-3">
-              <span className="font-semibold text-gray-900">{order.orderNumber}</span>
+      <Card className="rounded-xl border-border/70 bg-background/75 py-0 transition-shadow hover:shadow-sm">
+        <CardContent className="flex items-center justify-between gap-4 px-4 py-3.5">
+          <div className="min-w-0 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="truncate text-sm font-semibold text-foreground">{order.orderNumber}</span>
               <OrderStatusBadge status={order.status} />
             </div>
-            <p className="text-sm text-gray-500">
-              {SERVICE_TYPE_LABELS[order.serviceType]} ·{" "}
-              {itemCount > 0 ? `${itemCount} items` : "Items pending"} ·{" "}
-              {new Date(order.createdAt).toLocaleDateString("en-SG")}
+            <p className="truncate text-xs text-muted-foreground">
+              {SERVICE_TYPE_LABELS[order.serviceType]} · {itemCount > 0 ? `${itemCount} items` : "Items pending"}
             </p>
           </div>
           <div className="text-right">
             {total ? (
-              <p className="font-semibold text-gray-900">
-                SGD {total.toFixed(2)}
-              </p>
+              <p className="text-sm font-semibold text-foreground">SGD {total.toFixed(2)}</p>
             ) : (
-              <p className="text-sm text-gray-400">Est. pending</p>
+              <p className="text-xs text-muted-foreground">Est. pending</p>
             )}
-            <p className="text-xs text-gray-400">
-              {ORDER_STATUS_LABELS[order.status]}
-            </p>
+            <p className="text-[11px] text-muted-foreground">{ORDER_STATUS_LABELS[order.status]}</p>
           </div>
         </CardContent>
       </Card>
