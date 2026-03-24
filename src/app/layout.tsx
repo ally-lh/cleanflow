@@ -10,7 +10,7 @@ const plusJakartaSans = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "CleanFlow — Smart Laundry & Dry Cleaning",
+  title: "Pacific Cleaners",
   description:
     "Modern laundry and dry cleaning service with AI-assisted intake, pickup scheduling, and real-time order tracking.",
 };
@@ -20,7 +20,7 @@ export default function RootLayout({
 }: Readonly<{ children: React.ReactNode }>) {
   return (
     <html lang="en">
-      <body className={`${plusJakartaSans.variable} antialiased`}>
+      <body className={`${plusJakartaSans.variable} font-sans antialiased`}>
         {children}
         <Toaster position="top-right" richColors />
       </body>
