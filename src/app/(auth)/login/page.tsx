@@ -5,6 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
+import { ArrowRight, ShieldCheck, Sparkles, Truck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -40,67 +41,104 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <div className="w-full max-w-md space-y-6">
-        <div className="text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 bg-blue-600 rounded-xl mb-4">
-            <span className="text-white text-2xl">👕</span>
+    <div className="relative min-h-screen overflow-hidden px-4 py-10 sm:px-6 sm:py-16">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-80"
+        style={{
+          background:
+            "radial-gradient(36rem 24rem at 8% 12%, color-mix(in oklab, var(--primary) 14%, transparent), transparent), radial-gradient(30rem 20rem at 88% 82%, color-mix(in oklab, var(--chart-2) 12%, transparent), transparent)",
+        }}
+      />
+
+      <div className="relative mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
+        <section className="hidden rounded-3xl border border-border/70 bg-card/75 p-8 shadow-lg backdrop-blur md:block lg:p-10">
+          <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            <Sparkles className="h-3.5 w-3.5" />
+            Laundry Flow, Refined
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">{APP_NAME}</h1>
-        </div>
+          <h1 className="mt-5 text-4xl font-semibold leading-tight text-foreground lg:text-5xl">
+            Keep your laundry operations smooth from pickup to delivery.
+          </h1>
+          <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
+            Manage orders, scheduling, and status updates in one place with a cleaner interface your team can move through quickly.
+          </p>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Sign in to your account</CardTitle>
-            <CardDescription>Enter your email and password to continue</CardDescription>
-          </CardHeader>
-          <form onSubmit={handleSubmit}>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  name="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  required
-                  autoComplete="email"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  required
-                  autoComplete="current-password"
-                />
-              </div>
+          <div className="mt-8 grid gap-3 text-sm">
+            <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/75 px-4 py-3">
+              <ShieldCheck className="h-4 w-4 text-primary" />
+              Secure account access and role-based dashboards
+            </div>
+            <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/75 px-4 py-3">
+              <Truck className="h-4 w-4 text-primary" />
+              Live dispatch visibility for every order
+            </div>
+          </div>
+        </section>
+
+        <div className="w-full">
+          <div className="mb-5 text-center lg:text-left">
+            <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-lg text-primary-foreground shadow-sm">
+              🧺
+            </div>
+            <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{APP_NAME}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Laundry made smart.</p>
+          </div>
+
+          <Card className="rounded-3xl border-border/70 bg-card/90 py-0 shadow-xl backdrop-blur">
+            <CardHeader className="px-6 py-6">
+              <CardTitle className="text-xl font-semibold text-center">Sign in to your account</CardTitle>
+            </CardHeader>
+            <form onSubmit={handleSubmit}>
+              <CardContent className="space-y-5 px-6 sm:px-7">
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder=""
+                    required
+                    autoComplete="email"
+                    className="h-11 rounded-xl bg-background/80"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder=""
+                    required
+                    autoComplete="current-password"
+                    className="h-11 rounded-xl bg-background/80"
+                  />
+                </div>
+              </CardContent>
+              <CardFooter className="flex flex-col gap-3 border-0 px-6 pb-6 pt-5 sm:px-7 sm:pb-7 bg-white">
+                <Button type="submit" className="h-11 w-full rounded-xl text-sm font-semibold" disabled={loading}>
+                  {loading ? "Signing in..." : "Sign in"}
+                  {!loading && <ArrowRight className="ml-2 h-4 w-4" />}
+                </Button>
+                <p className="text-center text-sm text-muted-foreground">
+                  Don&apos;t have an account?{" "}
+                  <Link href="/register" className="font-semibold text-primary hover:opacity-80">
+                    Create one
+                  </Link>
+                </p>
+              </CardFooter>
+            </form>
+          </Card>
+
+          <Card className="mt-4 border-dashed border-primary/35 bg-primary/5 py-0">
+            <CardContent className="space-y-1 px-5 py-4 text-sm text-foreground/90">
+              <p className="font-semibold">Demo accounts (after seeding)</p>
+              <p className="text-muted-foreground">Customer: customer@demo.com / password123</p>
+              <p className="text-muted-foreground">Admin: admin@demo.com / password123</p>
             </CardContent>
-            <CardFooter className="flex flex-col gap-3">
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? "Signing in..." : "Sign in"}
-              </Button>
-              <p className="text-sm text-gray-500 text-center">
-                Don&apos;t have an account?{" "}
-                <Link href="/register" className="text-blue-600 hover:underline font-medium">
-                  Create one
-                </Link>
-              </p>
-            </CardFooter>
-          </form>
-        </Card>
-
-        {/* Demo credentials hint */}
-        <Card className="border-dashed bg-blue-50 border-blue-200">
-          <CardContent className="pt-4 text-sm text-blue-700 space-y-1">
-            <p className="font-medium">Demo accounts (after seeding)</p>
-            <p>Customer: customer@demo.com / password123</p>
-            <p>Admin: admin@demo.com / password123</p>
-          </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
     </div>
   );
