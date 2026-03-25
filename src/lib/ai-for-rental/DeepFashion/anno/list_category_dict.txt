@@ -1,0 +1,4 @@
+category_name category_label
+Dress 41
+Jumpsuit 42
+Romper 48

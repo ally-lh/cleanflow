@@ -1,0 +1,7 @@
+pillow
+numpy
+open_clip_torch
+fastapi
+uvicorn
+pydantic
+httpx
