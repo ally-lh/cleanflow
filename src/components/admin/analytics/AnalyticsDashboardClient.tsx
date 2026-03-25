@@ -7,6 +7,10 @@ import {
   BarChart,
   CartesianGrid,
   Cell,
+  Legend,
+  LabelList,
+  Line,
+  LineChart,
   Pie,
   PieChart,
   ReferenceLine,
@@ -20,13 +24,16 @@ import {
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatPostalSectorLabel, formatPostalSectorName } from "@/lib/geo/sgPostalSectors";
 import {
   buildDistrictHeatData,
-  buildDriverRouteProfiles,
   buildExpansionScatter,
   buildPieData,
-  buildRevenueBars,
-  buildRouteKpis,
+  buildRevenueMixCharts,
+  buildOperationalDrivers,
+  buildTopKpis,
+  buildDemandTopDistricts,
+  buildTimeSeries,
 } from "./transform";
 import type { AnalyticsSnapshot } from "./types";
 
@@ -39,36 +46,68 @@ interface Props {
 }
 
 export default function AnalyticsDashboardClient({ snapshot }: Props) {
-  const routeKpi = buildRouteKpis(snapshot);
-  const districtHeat = buildDistrictHeatData(snapshot);
-  const revenueBars = buildRevenueBars(snapshot.business);
+  const kpis = buildTopKpis(snapshot);
+  const districtHeat = buildDistrictHeatData(snapshot).map((row) => ({
+    ...row,
+    districtName: formatPostalSectorName(row.district),
+    districtLabel: formatPostalSectorLabel(row.district),
+  }));
   const pickupPie = buildPieData(snapshot.business?.pickupMethodCounts);
   const collectionPie = buildPieData(snapshot.business?.collectionMethodCounts);
-  const expansion = buildExpansionScatter(snapshot.expansion);
-  const turnaround = snapshot.business?.turnaroundHours;
-  const expansionRows = snapshot.expansion?.districts ?? [];
-  const driverProfiles = buildDriverRouteProfiles(routeKpi);
-  const [selectedDriverId, setSelectedDriverId] = useState(driverProfiles[0]?.id ?? "driver-1");
+  // Keep scatter derivation available for future use; current UI uses ranked Top 10.
+  const expansionRaw = buildExpansionScatter(snapshot.expansion);
+  const expansion = {
+    ...expansionRaw,
+    points: expansionRaw.points.map((p) => ({
+      ...p,
+      districtName: formatPostalSectorName(p.district),
+      districtLabel: formatPostalSectorLabel(p.district),
+    })),
+  };
+  const expansionRows = (snapshot.expansion?.districts ?? []).map((row) => ({
+    ...row,
+    districtName: formatPostalSectorName(row.district),
+    districtLabel: formatPostalSectorLabel(row.district),
+  }));
+  const operationalDrivers = buildOperationalDrivers(snapshot);
+  const revenueMix = buildRevenueMixCharts(snapshot);
+  const demandTop = buildDemandTopDistricts(snapshot).map((row) => ({
+    ...row,
+    districtName: formatPostalSectorName(row.district),
+    districtLabel: formatPostalSectorLabel(row.district),
+  }));
+  const timeDaily = buildTimeSeries(snapshot);
+
+  const [selectedDriverId, setSelectedDriverId] = useState<string>(operationalDrivers[0]?.driverId ?? "");
   const selectedDriver =
-    driverProfiles.find((profile) => profile.id === selectedDriverId) ?? driverProfiles[0];
+    operationalDrivers.find((d) => d.driverId === selectedDriverId) ?? operationalDrivers[0];
 
   return (
     <div className="space-y-8">
+      <section className="grid grid-cols-2 lg:grid-cols-5 gap-4">
+        <MetricCard title="Total orders" value={`${kpis.totalOrders}`} />
+        <MetricCard title="Total revenue" value={`$${kpis.totalRevenue.toFixed(2)}`} />
+        <MetricCard title="Avg order value" value={`$${kpis.avgOrderValue.toFixed(2)}`} />
+        <MetricCard title="Total distance saved" value={`${kpis.totalDistanceSavedKm.toFixed(2)} km`} />
+        <MetricCard title="Avg savings rate" value={`${kpis.avgSavingsRatePercent.toFixed(2)}%`} />
+      </section>
+
       <section className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900">Driver route optimization</h2>
-          <p className="text-sm text-gray-500">Switch profile to see per-driver optimization KPI dynamics</p>
+          <h2 className="text-lg font-semibold text-gray-900">Operational efficiency</h2>
+          <p className="text-sm text-gray-500">Baseline vs optimised distance per driver, and workload imbalance</p>
         </div>
-        <div className="w-full md:w-72">
-          <label className="block text-xs font-medium text-gray-600 mb-1">Driver profile</label>
+        <div className="w-full md:w-80">
+          <label className="block text-xs font-medium text-gray-600 mb-1">Driver</label>
           <select
             value={selectedDriverId}
             onChange={(event) => setSelectedDriverId(event.target.value)}
             className="w-full rounded-md border border-gray-300 bg-white px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500"
+            disabled={!operationalDrivers.length}
           >
-            {driverProfiles.map((profile) => (
-              <option key={profile.id} value={profile.id}>
-                {profile.name}
+            {operationalDrivers.map((d) => (
+              <option key={d.driverId} value={d.driverId}>
+                {d.driverLabel ?? d.driverId}
               </option>
             ))}
           </select>
@@ -76,26 +115,54 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
       </section>
 
       <section className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <MetricCard title="Baseline (selected)" value={`${(selectedDriver?.baselineKm ?? 0).toFixed(2)} km`} subtitle={`${selectedDriver?.stops ?? 0} stops`} />
+        <MetricCard title="Optimised (selected)" value={`${(selectedDriver?.optimizedKm ?? 0).toFixed(2)} km`} subtitle="Nearest-neighbor / 2-opt" />
+        <MetricCard title="Saved (selected)" value={`${(selectedDriver?.savingsKm ?? 0).toFixed(2)} km`} subtitle={`${(selectedDriver?.savingsPercent ?? 0).toFixed(2)}%`} />
         <MetricCard
-          title="Baseline route"
-          value={`${(selectedDriver?.baselineKm ?? 0).toFixed(2)} km`}
-          subtitle={`${selectedDriver?.tag ?? "Driver profile"}`}
+          title="Best saver"
+          value={`${(operationalDrivers[0]?.savingsKm ?? 0).toFixed(2)} km`}
+          subtitle={operationalDrivers[0]?.driverLabel ?? operationalDrivers[0]?.driverId ?? "—"}
         />
-        <MetricCard
-          title="Optimized route"
-          value={`${(selectedDriver?.optimizedKm ?? 0).toFixed(2)} km`}
-          subtitle={routeKpi.twoOptApplied ? "Nearest-neighbor + 2-opt" : "Nearest-neighbor heuristic"}
-        />
-        <MetricCard
-          title="Distance savings"
-          value={`${(selectedDriver?.savingsKm ?? 0).toFixed(2)} km`}
-          subtitle={`${selectedDriver?.nStops ?? 0} assigned stops`}
-        />
-        <MetricCard
-          title="Savings rate"
-          value={`${(selectedDriver?.savingsPercent ?? 0).toFixed(2)}%`}
-          subtitle={`Road factor ${routeKpi.roadFactor.toFixed(2)}`}
-        />
+      </section>
+
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Baseline vs optimised distance (per driver)</CardTitle>
+            <CardDescription>Compare route lengths and see imbalance</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={operationalDrivers} margin={{ left: 12, right: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="driverLabel" />
+                <YAxis />
+                <Tooltip />
+                <Legend />
+                <Bar dataKey="baselineKm" name="Baseline (km)" fill="#93c5fd" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="optimizedKm" name="Optimised (km)" fill="#2563eb" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Distance saved (per driver)</CardTitle>
+            <CardDescription>Sorted by savings to highlight the best wins</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={operationalDrivers} margin={{ left: 12, right: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="driverLabel" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="savingsKm" name="Saved (km)" fill="#14b8a6" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </section>
 
       <section className="grid grid-cols-1 gap-6">
@@ -114,26 +181,30 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
         <Card>
           <CardHeader>
             <CardTitle>Order density heatmap (postal prefix)</CardTitle>
-            <CardDescription>Matrix-style heat view inspired by operational admission heatmaps</CardDescription>
+            <CardDescription>Each row is a district; darker + longer bars mean more orders</CardDescription>
           </CardHeader>
           <CardContent className="space-y-1.5">
             {districtHeat.map((item) => (
-              <div key={item.district} className="grid grid-cols-[42px_auto_32px] items-center gap-2">
-                <div className="text-[10px] font-semibold text-slate-700">{item.district}</div>
+              <div key={item.district} className="grid grid-cols-[96px_1fr_32px] items-center gap-3">
                 <div
-                  className="grid gap-0.5"
-                  style={{ gridTemplateColumns: "repeat(24, 8px)" }}
+                  className="text-[11px] font-semibold text-slate-700 leading-4"
+                  title={item.districtLabel}
+                >
+                  {item.districtName}
+                </div>
+                <div
+                  className="grid gap-1 w-full"
+                  style={{ gridTemplateColumns: "repeat(24, minmax(0, 1fr))" }}
                 >
                   {Array.from({ length: 24 }).map((_, idx) => {
-                    // Tiny variation per cell to create a proper heatmap texture
-                    const variation = 0.84 + ((idx % 6) * 0.03);
-                    const alpha = Math.max(0.08, Math.min(0.96, item.intensity * variation));
+                    const isFilled = idx < item.filled;
+                    const alpha = isFilled ? 0.9 : 0.08;
                     return (
                       <div
                         key={`${item.district}-${idx}`}
-                        className="h-2 w-2 rounded-[1px] ring-1 ring-cyan-900/5"
+                        className="w-full aspect-square rounded-[2px] ring-1 ring-cyan-900/5"
                         style={{ backgroundColor: `rgba(8, 120, 153, ${alpha})` }}
-                        title={`District ${item.district} · ${item.count} orders`}
+                        title={`${item.districtLabel} · ${item.count} orders`}
                       />
                     );
                   })}
@@ -142,73 +213,81 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
               </div>
             ))}
             <div className="pt-1 text-[11px] text-gray-500">
-              Darker squares indicate higher order concentration.
+              Tip: use this to pick zones for promos, staffing, or micro-hubs.
             </div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader>
-            <CardTitle>Expansion opportunity</CardTitle>
-            <CardDescription>Districts with high demand and far distance from depot are highlighted</CardDescription>
+            <CardTitle>Ranked expansion districts</CardTitle>
+            <CardDescription>Highest demand areas that are farthest from the current depot</CardDescription>
           </CardHeader>
-          <CardContent className="h-[300px]">
+          <CardContent className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <ScatterChart margin={{ left: 8, right: 8, top: 8, bottom: 8 }}>
-                <CartesianGrid />
-                <XAxis type="number" dataKey="distanceKm" name="Distance (km)" unit="km" />
-                <YAxis type="number" dataKey="orderCount" name="Order count" />
-                <ReferenceLine x={expansion.medianX} stroke="#6b7280" strokeDasharray="4 4" />
-                <ReferenceLine y={expansion.medianY} stroke="#6b7280" strokeDasharray="4 4" />
-                <Tooltip
-                  cursor={{ strokeDasharray: "3 3" }}
-                  formatter={(value: unknown) =>
-                    typeof value === "number" ? value.toFixed(2) : String(value ?? "")
-                  }
-                />
-                <Scatter data={expansion.points}>
-                  {expansion.points.map((point) => (
-                    <Cell key={point.district} fill={point.candidate ? "#ef4444" : "#2563eb"} />
-                  ))}
-                </Scatter>
-              </ScatterChart>
+              <BarChart
+                data={[...expansionRows].sort((a, b) => b.meanDistanceFromDepotKm - a.meanDistanceFromDepotKm).slice(0, 10)}
+                layout="vertical"
+                margin={{ left: 18, right: 8 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis dataKey="districtName" type="category" width={120} />
+                <Tooltip />
+                <Bar dataKey="meanDistanceFromDepotKm" name="Mean distance (km)" fill="#ef4444" radius={[0, 6, 6, 0]} />
+              </BarChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
       </section>
 
-      <section>
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Expansion candidate ranking</CardTitle>
-            <CardDescription>Sorted by order count, with mean distance from depot</CardDescription>
+            <CardTitle>Top districts by order count</CardTitle>
+            <CardDescription>Sorted descending for demand concentration</CardDescription>
           </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>District</TableHead>
-                  <TableHead>Order count</TableHead>
-                  <TableHead>Mean distance (km)</TableHead>
-                  <TableHead>Signal</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {expansionRows.map((row) => {
-                  const candidate = expansion.points.find((point) => point.district === row.district)?.candidate;
-                  return (
-                    <TableRow key={row.district}>
-                      <TableCell className="font-medium">{row.district}</TableCell>
-                      <TableCell>{row.orderCount}</TableCell>
-                      <TableCell>{row.meanDistanceFromDepotKm.toFixed(2)}</TableCell>
-                      <TableCell className={candidate ? "text-red-600 font-medium" : "text-gray-500"}>
-                        {candidate ? "Candidate" : "Monitor"}
-                      </TableCell>
-                    </TableRow>
-                  );
-                })}
-              </TableBody>
-            </Table>
+          <CardContent className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={demandTop} layout="vertical" margin={{ left: 18, right: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis type="number" />
+                <YAxis
+                  dataKey="districtName"
+                  type="category"
+                  width={140}
+                  interval={0}
+                  tickMargin={6}
+                />
+                <Tooltip
+                  formatter={(value: unknown, _name: unknown, item: { payload?: { districtLabel?: string } }) => {
+                    const num = typeof value === "number" ? value : Number(value ?? 0);
+                    return [num, item?.payload?.districtLabel ?? "Orders"];
+                  }}
+                />
+                <Bar dataKey="orders" name="Orders" fill="#0ea5e9" radius={[0, 6, 6, 0]}>
+                  <LabelList dataKey="districtName" position="insideLeft" fontSize={10} fill="#0f172a" />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Orders over time</CardTitle>
+            <CardDescription>Daily order volume (from createdAt)</CardDescription>
+          </CardHeader>
+          <CardContent className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={timeDaily} margin={{ left: 12, right: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="date" minTickGap={24} />
+                <YAxis />
+                <Tooltip />
+                <Line type="monotone" dataKey="orders" name="Orders" stroke="#2563eb" strokeWidth={2} dot={false} />
+              </LineChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </section>
@@ -221,12 +300,12 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
           </CardHeader>
           <CardContent className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={revenueBars} margin={{ left: 12, right: 10 }}>
+              <BarChart data={revenueMix.revenueBar} margin={{ left: 12, right: 10 }}>
                 <CartesianGrid strokeDasharray="3 3" />
                 <XAxis dataKey="serviceType" />
                 <YAxis />
                 <Tooltip />
-                <Bar dataKey="totalRevenue" name="Revenue" fill="#14b8a6" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="revenue" name="Revenue" fill="#14b8a6" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -234,36 +313,57 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Order collection split</CardTitle>
-            <CardDescription>Pickup and collection channel breakdown</CardDescription>
+            <CardTitle>Average order value by service</CardTitle>
+            <CardDescription>Identify which services drive value vs volume</CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <PiePanel title="Pickup method" data={pickupPie} />
-            <PiePanel title="Collection method" data={collectionPie} />
+          <CardContent className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={revenueMix.aovBar} margin={{ left: 12, right: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="serviceType" />
+                <YAxis />
+                <Tooltip />
+                <Bar dataKey="avgOrderValue" name="Avg order value" fill="#8b5cf6" radius={[6, 6, 0, 0]} />
+              </BarChart>
+            </ResponsiveContainer>
           </CardContent>
         </Card>
       </section>
 
-      <section>
+      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
           <CardHeader>
-            <CardTitle>Order turnaround time</CardTitle>
-            <CardDescription>From created timestamp to completed timestamp</CardDescription>
+            <CardTitle>Revenue contribution (%)</CardTitle>
+            <CardDescription>Service mix by revenue share</CardDescription>
           </CardHeader>
-          <CardContent>
-            {turnaround?.ok ? (
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <MetricCard title="Median" value={`${(turnaround.median ?? 0).toFixed(1)} h`} />
-                <MetricCard title="Mean" value={`${(turnaround.mean ?? 0).toFixed(1)} h`} />
-                <MetricCard title="P90" value={`${(turnaround.p90 ?? 0).toFixed(1)} h`} />
-                <MetricCard title="Samples" value={`${turnaround.sampleSize ?? 0}`} />
-              </div>
-            ) : (
-              <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-amber-900">
-                Turnaround is unavailable for now: <strong>{turnaround?.reason ?? "insufficient data"}</strong>.{" "}
-                Complete more orders with both <code>createdAt</code> and <code>completedAt</code> to populate this chart.
-              </div>
-            )}
+          <CardContent className="h-[320px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie data={revenueMix.revenuePie} dataKey="value" nameKey="name" outerRadius={110} label>
+                  {revenueMix.revenuePie.map((entry, index) => (
+                    <Cell key={entry.name} fill={PIE_COLORS[index % PIE_COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  formatter={(value: unknown, name: unknown, item: { payload?: { percent?: number } }) => {
+                    const num = typeof value === "number" ? value : Number(value ?? 0);
+                    const pct = item?.payload?.percent ?? 0;
+                    return [`$${num.toFixed(2)} (${pct.toFixed(1)}%)`, String(name ?? "")];
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Pickup vs collection split</CardTitle>
+            <CardDescription>Usage patterns and preferences</CardDescription>
+          </CardHeader>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <PiePanel title="Pickup method" data={pickupPie} />
+            <PiePanel title="Collection method" data={collectionPie} />
           </CardContent>
         </Card>
       </section>

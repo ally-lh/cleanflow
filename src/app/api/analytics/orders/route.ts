@@ -34,8 +34,8 @@ export async function GET(req: NextRequest) {
       address: true,
       items: true,
       invoice: true,
-      pickupRequest: true,
-      deliveryRequest: true,
+      pickupRequest: { include: { driver: { include: { user: true } } } },
+      deliveryRequest: { include: { driver: { include: { user: true } } } },
       statusHistory: { orderBy: { createdAt: "asc" } },
     },
     orderBy: { createdAt: "desc" },
@@ -69,6 +69,12 @@ export async function GET(req: NextRequest) {
     // Logistics
     estimatedPickupDistance: order.pickupRequest?.estimatedDistance ?? null,
     estimatedDeliveryDistance: order.deliveryRequest?.estimatedDistance ?? null,
+    pickupDriverId: order.pickupRequest?.driverId ?? null,
+    deliveryDriverId: order.deliveryRequest?.driverId ?? null,
+    pickupDriverName: order.pickupRequest?.driver?.user?.name ?? null,
+    deliveryDriverName: order.deliveryRequest?.driver?.user?.name ?? null,
+    pickupRequestedDate: order.pickupRequest?.requestedDate?.toISOString?.() ?? null,
+    deliveryRequestedDate: order.deliveryRequest?.requestedDate?.toISOString?.() ?? null,
   }));
 
   return NextResponse.json({
