@@ -41,3 +41,8 @@ yarn-error.log*
 next-env.d.ts
 
 /src/generated/prisma
+
+# python-analytics generated data & snapshot (run build_snapshot.py locally)
+/python-analytics/data/
+/python-analytics/output/
+/python-analytics/.venv/

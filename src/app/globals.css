@@ -122,8 +122,20 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 12% 10%, color-mix(in oklab, var(--primary) 8%, transparent) 0%, transparent 40%),
+      radial-gradient(circle at 88% 86%, color-mix(in oklab, var(--chart-1) 10%, transparent) 0%, transparent 45%);
+    min-height: 100vh;
+    font-feature-settings: "ss01" 1, "cv01" 1, "cv03" 1;
+    text-rendering: optimizeLegibility;
+    overscroll-behavior: none;
   }
   html {
     @apply font-sans;
+  }
+
+  ::selection {
+    background: color-mix(in oklab, var(--primary) 22%, white);
+    color: var(--foreground);
   }
 }
