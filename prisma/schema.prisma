@@ -166,6 +166,7 @@ model User {
   customerProfile CustomerProfile?
   adminProfile    AdminProfile?
   driverProfile   Driver?
+  rentals         Rental[]
 }
 
 model CustomerProfile {
@@ -465,9 +466,74 @@ model RouteEstimate {
   deliveryRequest DeliveryRequest? @relation(fields: [deliveryRequestId], references: [id])
 }
 
-// ──────────────────────────────────────────
+// ─────────────────────────────────────────
+// RENTAL CATALOG
+// ─────────────────────────────────────────
+
+enum RentalCategory {
+  DRESS
+  JUMPSUIT
+  ROMPER
+}
+
+model ClothingItem {
+  id              String        @id @default(cuid())
+  name            String
+  imageUrl        String
+  category        RentalCategory
+  brand           String
+  pricePerMonth   Float         // Price for 1 piece per month
+  sizes           String[]       // e.g. ["XS", "S", "M", "L", "XL"]
+  sizeQuantities  Json?          // e.g. {"XS": 2, "S": 5, "M": 6, "L": 5, "XL": 3}
+  description     String?
+  isAvailable     Boolean        @default(true)
+  // CLIP embedding vector for similarity search - stored as JSON string in Postgres
+  embedding       String?        // serialized JSON array e.g. "[0.1, 0.2, ...]"
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+
+  rentalItems     RentalItem[]
+}
+
+enum RentalStatus {
+  DRAFT
+  PENDING_PAYMENT
+  ACTIVE
+  EXPIRED
+  CANCELLED
+}
+
+model Rental {
+  id                String        @id @default(cuid())
+  userId            String
+  status            RentalStatus  @default(DRAFT)
+  startDate         DateTime
+  endDate           DateTime?
+  subscriptionType  String        @default("MONTHLY") // MONTHLY, QUARTERLY, YEARLY
+  totalAmount       Float
+  notes             String?
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+
+  user              User          @relation(fields: [userId], references: [id])
+  items             RentalItem[]
+}
+
+model RentalItem {
+  id              String      @id @default(cuid())
+  rentalId        String
+  clothingItemId  String
+  selectedSize    String
+  priceAtRental   Float
+  createdAt       DateTime    @default(now())
+
+  rental          Rental      @relation(fields: [rentalId], references: [id], onDelete: Cascade)
+  clothingItem    ClothingItem @relation(fields: [clothingItemId], references: [id])
+}
+
+// ─────────────────────────────────────────
 // NOTIFICATIONS
-// ──────────────────────────────────────────
+// ─────────────────────────────────────────
 
 model NotificationLog {
   id        String           @id @default(cuid())

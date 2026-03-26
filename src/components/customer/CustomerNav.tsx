@@ -6,15 +6,24 @@ import { logoutAction } from "@/actions/auth";
 import { Button } from "@/components/ui/button";
 import { APP_NAME } from "@/types/constants";
 import { cn } from "@/lib/utils";
-import { WashingMachine } from "lucide-react";
+import { WashingMachine, Sparkles, Shirt, LucideIcon, ShoppingBag } from "lucide-react";
 
 interface Props {
   user: { name?: string | null; email?: string | null };
 }
 
-const navLinks = [
+interface NavLink {
+  href: string;
+  label: string;
+  icon?: LucideIcon;
+}
+
+const navLinks: NavLink[] = [
   { href: "/dashboard", label: "My Orders" },
   { href: "/orders/new", label: "New Order" },
+  { href: "/catalog", label: "Rental", icon: Shirt },
+  { href: "/style", label: "Style AI", icon: Sparkles },
+  { href: "/cart", label: "Cart", icon: ShoppingBag },
   { href: "/profile", label: "Profile" },
 ];
 
@@ -35,12 +44,13 @@ export default function CustomerNav({ user }: Props) {
                 key={link.href}
                 href={link.href}
                 className={cn(
-                  "text-sm transition-colors",
+                  "text-sm transition-colors flex items-center gap-1",
                   pathname === link.href
                     ? "text-blue-600 font-medium"
                     : "text-gray-600 hover:text-gray-900"
                 )}
               >
+                {link.icon && <link.icon className="w-4 h-4" />}
                 {link.label}
               </Link>
             ))}
