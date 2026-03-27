@@ -32,7 +32,6 @@ import {
   buildRevenueMixCharts,
   buildOperationalDrivers,
   buildTopKpis,
-  buildDemandTopDistricts,
   buildTimeSeries,
 } from "./transform";
 import type { AnalyticsSnapshot } from "./types";
@@ -71,13 +70,12 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
     districtName: formatPostalSectorName(row.district),
     districtLabel: formatPostalSectorLabel(row.district),
   }));
+  const rankedExpansionRows = [...expansionRows]
+    .sort((a, b) => b.meanDistanceFromDepotKm - a.meanDistanceFromDepotKm)
+    .filter((row, index, all) => all.findIndex((r) => r.districtName === row.districtName) === index)
+    .slice(0, 10);
   const operationalDrivers = buildOperationalDrivers(snapshot);
   const revenueMix = buildRevenueMixCharts(snapshot);
-  const demandTop = buildDemandTopDistricts(snapshot).map((row) => ({
-    ...row,
-    districtName: formatPostalSectorName(row.district),
-    districtLabel: formatPostalSectorLabel(row.district),
-  }));
   const timeDaily = buildTimeSeries(snapshot);
 
   const [selectedDriverId, setSelectedDriverId] = useState<string>(operationalDrivers[0]?.driverId ?? "");
@@ -236,7 +234,7 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
           <CardContent className="h-[320px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
-                data={[...expansionRows].sort((a, b) => b.meanDistanceFromDepotKm - a.meanDistanceFromDepotKm).slice(0, 10)}
+                data={rankedExpansionRows}
                 layout="vertical"
                 margin={{ left: 18, right: 8 }}
               >
@@ -251,38 +249,7 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
         </Card>
       </section>
 
-      <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Top districts by order count</CardTitle>
-            <CardDescription>Sorted descending for demand concentration</CardDescription>
-          </CardHeader>
-          <CardContent className="h-[320px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={demandTop} layout="vertical" margin={{ left: 18, right: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis
-                  dataKey="districtName"
-                  type="category"
-                  width={140}
-                  interval={0}
-                  tickMargin={6}
-                />
-                <Tooltip
-                  formatter={(value: unknown, _name: unknown, item: { payload?: { districtLabel?: string } }) => {
-                    const num = typeof value === "number" ? value : Number(value ?? 0);
-                    return [num, item?.payload?.districtLabel ?? "Orders"];
-                  }}
-                />
-                <Bar dataKey="orders" name="Orders" fill="#0ea5e9" radius={[0, 6, 6, 0]}>
-                  <LabelList dataKey="districtName" position="insideLeft" fontSize={10} fill="#0f172a" />
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </CardContent>
-        </Card>
-
+      <section className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader>
             <CardTitle>Orders over time</CardTitle>
