@@ -37,6 +37,8 @@ import {
 } from "./transform";
 import type { AnalyticsSnapshot } from "./types";
 
+import CongestionPanel from "./CongestionPanel";
+
 const ClusterDensityMap = dynamic(() => import("./ClusterDensityMap"), { ssr: false });
 
 const PIE_COLORS = ["#2563eb", "#14b8a6", "#f97316", "#8b5cf6", "#e11d48"];
@@ -175,6 +177,14 @@ export default function AnalyticsDashboardClient({ snapshot }: Props) {
             <ClusterDensityMap clustering={snapshot.geo?.clustering} expansion={snapshot.expansion} />
           </CardContent>
         </Card>
+      </section>
+
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Traffic & congestion</h2>
+          <p className="text-sm text-gray-500">Peak-hour road factors and optimal dispatch windows by district</p>
+        </div>
+        <CongestionPanel snapshot={snapshot} />
       </section>
 
       <section className="grid grid-cols-1 lg:grid-cols-2 gap-6">
