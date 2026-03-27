@@ -61,11 +61,6 @@ export default function CustomerNav({ user }: Props) {
           <span className="text-sm text-gray-500 hidden sm:block">
             {user.name ?? user.email}
           </span>
-          <form action={logoutAction}>
-            <Button type="submit" variant="ghost" size="sm">
-              Sign out
-            </Button>
-          </form>
         </div>
       </div>
     </header>
