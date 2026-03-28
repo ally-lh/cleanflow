@@ -1,0 +1,283 @@
+import img001 from "./img/001_Valen Sash Tie Maxi Jumpsuit Black.jpg";
+import img002 from "./img/002_Kandy Mesh Peephole Jumpsuit.png";
+import img003 from "./img/003_Melinda V Neck Vest Top Grey.png";
+import img004 from "./img/004_Aria Tweed Vest Top Black.png";
+import img005 from "./img/005_Celeste Soft Denim Dress Dark Wash.jpg";
+import img006 from "./img/006_Orient Cheongsam Jacquard Ribbon Top Yellow.png";
+import img007 from "./img/007_Althaea Peplum Top Cream.jpg";
+import img008 from "./img/008_Liyra Floral Soft Jacquard Dress Pink.jpg";
+import img009 from "./img/009_Cynthia Crepe Mini Dress Yellow.jpg";
+import img010 from "./img/010_Natasha Puff Sleeves Pleated Romper Forest.jpg";
+import img011 from "./img/011_Fania Halter Neck Midi Dress Black.jpg";
+import img012 from "./img/012_Slim-Fit Tuxedo Jacket.png";
+import img013 from "./img/013_Cowl Neck Oblique-layered Silk Dress.jpg";
+import img014 from "./img/014_Pleated Sleeveless Midi Silk Dress.jpg";
+import img015 from "./img/015_Amalfi Stripe Silk Shirtdress with Belt.jpg"
+import img016 from "./img/016_Vivi Knit Dress.jpg"
+import img017 from "./img/017_Puff-Sleeve Blouse - Made With Liberty Fabric.jpg"
+import img018 from "./img/018_Daffodil Print Silk Blouse - Made With Liberty Fabric.jpg"
+import img019 from "./img/019_Hawaiian Cruise Lily Shirt.jpg"
+
+export interface RentalItem {
+  id: string;
+  name: string;
+  category: string;
+  size: string;
+  price: number;
+  color: string;
+  occasion: string;
+  description: string;
+  brand: string;
+  image: string;
+  sizes: string[];
+}
+
+export const rentalCatalog: RentalItem[] = [
+  {
+    id: "R-101",
+    name: "Valen Sash Tie Maxi Jumpsuit Black",
+    category: "Jumpsuit",
+    size: "S-XL",
+    price: 25,
+    color: "Black",
+    occasion: "Work / Casual",
+    description: "Valen jumpsuit comes with functional thick belt loops and a sash tie that cinches the waist for a flattering silhouette. The functional pockets add practicality, while marble print buttons provide a more classy look. With a sleeveless design and a maxi length, this jumpsuit exudes effortless chic!",
+    brand: "Purpur Singapore",
+    image: img001.src,
+    sizes: ["S", "M", "L"],
+  },
+  {
+    id: "R-102",
+    name: "Kandy Mesh Peephole Jumpsuit Blush",
+    category: "Jumpsuit",
+    size: "XS-XL",
+    price: 59.9,
+    color: "Blush",
+    occasion: "Work / Casual",
+    description: "The Kandy Mesh Peephole Jumpsuit is crafted from high-quality polyester, offering a sleek and comfortable fit. Featuring adjustable spaghetti straps, front zip closure, and two functional side seam pockets. The standout feature is the mesh peephole design at the waist, adding a touch of flirtatious elegance.",
+    brand: "Purpur Singapore",
+    image: img002.src,
+    sizes: ["XS", "S", "M", "L"],
+  },
+  {
+    id: "R-103",
+    name: "Melinda V Neck Vest Top Grey",
+    category: "Top",
+    size: "XS-XL",
+    price: 25,
+    color: "Grey",
+    occasion: "Work",
+    description: "The Melinda V-Neck Vest Top is a sleek, structured piece perfect for elevating your work wardrobe. Featuring a functional welt pocket and a flattering V-neckline, this top offers both style and practicality. Polyester blend fabric ensures comfort throughout the day.",
+    brand: "Purpur Singapore",
+    image: img003.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-104",
+    name: "Aria Tweed Vest Top Black",
+    category: "Top",
+    size: "XS-XL",
+    price: 39.9,
+    color: "Black",
+    occasion: "Work",
+    description: "Elevate your workwear with the Aria Tweed Vest Top, a perfect blend of sophistication and trendiness. This sleeveless, slightly cropped top is crafted from premium tweed fabric with floral gold-trimmed button closure and fray detail at the hem.",
+    brand: "Purpur Singapore",
+    image: img004.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-105",
+    name: "Celeste Soft Denim Dress Dark Wash",
+    category: "Dress",
+    size: "XS-XL",
+    price: 59.9,
+    color: "Dark Blue",
+    occasion: "Work / Casual",
+    description: "Celeste Soft Denim Dress is a refined everyday piece crafted from lightweight polyester-blend soft denim with a smooth, soft-touch hand feel. Designed with a collared V-neckline and short sleeves, featuring front button closure and pleated detailing for a flattering fit.",
+    brand: "Purpur Singapore",
+    image: img005.src,
+    sizes: ["XS", "S", "M"],
+  },
+  {
+    id: "R-106",
+    name: "Orient Cheongsam Jacquard Ribbon Top Yellow",
+    category: "Top",
+    size: "S-XL",
+    price: 45.9,
+    color: "Yellow",
+    occasion: "Festive",
+    description: "Add a touch of elegance to your wardrobe with the Cheongsam Jacquard Ribbon Top. Crafted from luxurious jacquard fabric with functional Mandarin button at collar. The beautiful overlap layering design with contrast piping detail creates a sophisticated silhouette.",
+    brand: "Purpur Singapore",
+    image: img006.src,
+    sizes: ["S", "M", "L", "XL"],
+  },
+  {
+    id: "R-107",
+    name: "Althaea Peplum Top Cream",
+    category: "Top",
+    size: "XS-XL",
+    price: 42.9,
+    color: "Beige",
+    occasion: "Work / Casual",
+    description: "Althaea Peplum Top is a chic and structured top designed with feminine detailing. Made of polyester blend textured suit fabric with puffed sleeve and elasticated cuff. Features self-tie ribbon details at front and ruffle design at hem.",
+    brand: "Purpur Singapore",
+    image: img007.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-108",
+    name: "Liyra Floral Soft Jacquard Dress Pink",
+    category: "Dress",
+    size: "XS-XL",
+    price: 59.9,
+    color: "Blush",
+    occasion: "Work / Casual",
+    description: "The Liyra Floral Soft Jacquard Dress is a graceful and feminine piece, crafted from soft-touch floral jacquard fabric. Designed with a sleeveless silhouette and adjustable straps. Fully lined with functional pockets and peplum flare hem.",
+    brand: "Purpur Singapore",
+    image: img008.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-109",
+    name: "Cynthia Crepe Mini Dress Yellow",
+    category: "Dress",
+    size: "XS-XL",
+    price: 52.9,
+    color: "Yellow",
+    occasion: "Casual",
+    description: "Introducing the Cynthia Crepe Mini Dress, a dreamy chiffon mini designed to blend femininity with comfort. Featuring a soft square neckline and adjustable shoulder straps with decorative ribbons. Crafted from mid-weight, non-stretch triple crepe.",
+    brand: "Purpur Singapore",
+    image: img009.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-110",
+    name: "Natasha Puff Sleeves Pleated Romper Forest",
+    category: "Romper",
+    size: "XS-XL",
+    price: 45,
+    color: "Forest",
+    occasion: "Work / Casual",
+    description: "Sweet and simple everyday romper for days you don't know what to wear. Fully lined with sweetheart neckline and pleated bust area. Features elasticated shoulder area, puff sleeves, and functional side pockets.",
+    brand: "Purpur Singapore",
+    image: img010.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-111",
+    name: "Fania Halter Neck Midi Dress Black",
+    category: "Dress",
+    size: "XS-XL",
+    price: 55.9,
+    color: "Black",
+    occasion: "Dinner",
+    description: "Hope you're going to a really nice party sometimes soon because this dress wants to come. Comes with inner lining, adjustable drawstring halter neckline, cinched waist, and slits at front.",
+    brand: "Purpur Singapore",
+    image: img011.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-112",
+    name: "Slim-Fit Tuxedo Jacket",
+    category: "Suit",
+    size: "S-XL",
+    price: 120,
+    color: "Green",
+    occasion: "Dinner",
+    description: "Sharp tailored tuxedo with satin lapel and modern fit. Perfect for formal occasions and black-tie events.",
+    brand: "Porter",
+    image: img012.src,
+    sizes: ["S", "M", "L", "XL"],
+  },
+  {
+    id: "R-113",
+    name: "Cowl Neck Oblique-layered Silk Dress",
+    category: "Dress",
+    size: "XS-XL",
+    price: 95,
+    color: "Navy Blue",
+    occasion: "Dinner",
+    description: "The cowl neck design of this dress exudes an air of timeless elegance, draping gracefully and adding a touch of allure to your neckline. The flawless oblique layers on the skirt hem give a relaxed and an extravagant effect.",
+    brand: "LilySilk",
+    image: img013.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-114",
+    name: "Pleated Sleeveless Midi Silk Dress",
+    category: "Dress",
+    size: "XS-XL",
+    price: 84,
+    color: "Light Apricot",
+    occasion: "Dinner",
+    description: "A mature and elegant midi dress with a light color that blends well with your skin. The front has beautiful pleats of georgette decorations that add glamor to it. Designed with just the right waistline, the slimming dress shapes the figure beautifully.",
+    brand: "LilySilk",
+    image: img014.src,
+    sizes: ["XS", "S", "M", "L", "XL"],
+  },
+  {
+    id: "R-115",
+    name: "Amalfi Stripe Silk Shirtdress with Belt",
+    category: "Dress",
+    size: "M-XL",
+    price: 28,
+    color: "Blue-white",
+    occasion: "Casual",
+    description: "Stripped A-line shirt-dress designed with style and fashion. The matching sash silk belt is an important finishing touch to the whole piece, as it looks gorgeous and shapes the body. The navy stripes imprints the message of seaside vacation, the coming of spring and summer, and being happy, bold, and free.",
+    brand: "LilySilk",
+    image: img015.src,
+    sizes: [ "M", "L", "XL"],
+  },
+  {
+    id: "R-116",
+    name: "Vivi Knit Dress",
+    category: "Dress",
+    size: "M-XL",
+    price: 34,
+    color: "Black",
+    occasion: "Work / Casual",
+    description: "This off-the-shoulder silhouette is made from spun silk yarn, where the pleated skirt designed with rib-knit technique creates a sense of fluidity.",
+    brand: "LilySilk",
+    image: img016.src,
+    sizes: [ "M", "L", "XL"],
+  },
+  {
+    id: "R-117",
+    name: "Puff-Sleeve Blouse - Made With Liberty Fabric",
+    category: "Top",
+    size: "M-L",
+    price: 34,
+    color: "Green",
+    occasion: "Work / Casual",
+    description: "Step into a world of timeless charm with our Fairytale Forest Series Blouse made with Liberty Fabric. The romantic puff sleeves redefine sophistication—voluminous shoulders create a statuesque silhouette, while tapered cuffs lend a refined touch that flatters every arm with effortless grace. Pair it with flowing skirts for a storybook romance or with crisp denim for modern charm—because magic should be worn, not just imagined.",
+    brand: "LilySilk",
+    image: img017.src,
+    sizes: [ "M", "L"],
+  },
+  {
+    id: "R-118",
+    name: "Daffodil Print Silk Blouse - Made With Liberty Fabric",
+    category: "Top",
+    size: "M-XL",
+    price: 34,
+    color: "Floral",
+    occasion: "Work / Casual",
+    description: "This timeless silk shirt is elevated with a romantic daffodil print on lustrous satin, striking the perfect balance between structure and fluidity. Whether paired with tailored trousers, denim, or styled as a matching set with the coordinating print, this piece exudes elegance and confidence.",
+    brand: "LilySilk",
+    image: img018.src,
+    sizes: [ "M", "L","XL"],
+  },
+  {
+    id: "R-119",
+    name: "Hawaiian Cruise Lily Shirt",
+    category: "Top",
+    size: "M-XL",
+    price: 34,
+    color: "Floral",
+    occasion: "Casual",
+    description: "Embark on an unforgettable journey to sun-drenched shores with this classic Hawaiian lily floral print shirt. Crafted from exquisite silk jacquard with Coolmax® technology for breathability and quick-drying comfort. Capture the innermost Hawaiian charm during your tropical getaway or even if you're just relaxing under the sun. Acknowledge the presence of aloha's spirit as you explore nature's gift.",
+    brand: "LilySilk",
+    image: img019.src,
+    sizes: [ "M", "L","XL"],
+  },
+];
