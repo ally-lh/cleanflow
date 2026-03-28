@@ -65,8 +65,8 @@ export default function CheckoutPage() {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
         <p className="text-gray-500 mb-4">Your cart is empty</p>
-        <Link href="/catalog">
-          <Button>Browse Catalog</Button>
+        <Link href="/rent">
+          <Button>Browse Rentals</Button>
         </Link>
       </div>
     );

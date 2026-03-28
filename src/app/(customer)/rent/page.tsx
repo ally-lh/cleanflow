@@ -1,95 +1,39 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { Sparkles, Search, SlidersHorizontal, Bot, SendHorizonal } from "lucide-react";
+import { useMemo, useState, useRef, useEffect } from "react";
+import { Sparkles, Search, SlidersHorizontal, Bot, SendHorizonal, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-
-type Category = "Dresses" | "Suits" | "Traditional" | "Casual" | "Outerwear";
-
-type Listing = {
-  id: string;
-  name: string;
-  category: Category;
-  size: string;
-  price: number;
-  color: string;
-  occasion: string;
-  description: string;
-};
+import Link from "next/link";
+import { rentalCatalog } from "@/data/rentalCatalog";
 
 type PriceFilter = "all" | "under-50" | "50-100" | "100-plus";
 
-const listings: Listing[] = [
-  {
-    id: "R-1001",
-    name: "Emerald Satin Evening Dress",
-    category: "Dresses",
-    size: "S-M",
-    price: 84,
-    color: "Emerald",
-    occasion: "Gala / Dinner",
-    description: "Flowing satin silhouette with soft drape for formal evenings.",
-  },
-  {
-    id: "R-1002",
-    name: "Classic Black Tuxedo",
-    category: "Suits",
-    size: "M-L",
-    price: 120,
-    color: "Black",
-    occasion: "Wedding / Black tie",
-    description: "Sharp tailored tuxedo with satin lapel and modern fit.",
-  },
-  {
-    id: "R-1003",
-    name: "Linen Resort Co-ord Set",
-    category: "Casual",
-    size: "XS-M",
-    price: 45,
-    color: "Sand",
-    occasion: "Beach / Brunch",
-    description: "Breathable two-piece linen set for warm-weather events.",
-  },
-  {
-    id: "R-1004",
-    name: "Navy Structured Blazer",
-    category: "Outerwear",
-    size: "S-L",
-    price: 58,
-    color: "Navy",
-    occasion: "Business / Smart casual",
-    description: "Structured blazer with versatile styling across day and night.",
-  },
-  {
-    id: "R-1005",
-    name: "Modern Kebaya Set",
-    category: "Traditional",
-    size: "S-M",
-    price: 95,
-    color: "Rose Gold",
-    occasion: "Festive / Family event",
-    description: "Elegant kebaya with refined embroidery and matching skirt.",
-  },
-  {
-    id: "R-1006",
-    name: "Ivory Pleated Midi Dress",
-    category: "Dresses",
-    size: "M-L",
-    price: 72,
-    color: "Ivory",
-    occasion: "Garden party",
-    description: "Lightweight pleated midi dress with effortless movement.",
-  },
-];
+type RecommendedItem = {
+  id: string;
+  name: string;
+  image: string;
+  category: string;
+  price: number;
+  color: string;
+  occasion: string;
+  brand: string;
+  description: string;
+  keywordPercent: number;
+  clipPercent: number;
+  finalPercent: number;
+};
 
 type ChatMessage = {
   role: "user" | "assistant";
   content: string;
+  items?: RecommendedItem[];
+  queryType?: string;
+  weights?: { keyword: number; clip: number };
 };
 
 function inPriceBand(price: number, band: PriceFilter) {
@@ -97,35 +41,6 @@ function inPriceBand(price: number, band: PriceFilter) {
   if (band === "50-100") return price >= 50 && price <= 100;
   if (band === "100-plus") return price > 100;
   return true;
-}
-
-function recommendFromQuery(query: string) {
-  const q = query.toLowerCase();
-
-  const scored = listings
-    .map((item) => {
-      let score = 0;
-
-      if (q.includes(item.category.toLowerCase())) score += 3;
-      if (q.includes(item.occasion.toLowerCase().split("/")[0].trim().toLowerCase())) score += 2;
-      if (q.includes(item.color.toLowerCase())) score += 2;
-      if (q.includes("budget") || q.includes("cheap") || q.includes("affordable")) {
-        if (item.price < 60) score += 3;
-      }
-      if (q.includes("formal") || q.includes("wedding") || q.includes("gala")) {
-        if (item.category === "Suits" || item.category === "Dresses" || item.category === "Traditional") score += 2;
-      }
-      if (q.includes("casual") || q.includes("brunch") || q.includes("day")) {
-        if (item.category === "Casual" || item.category === "Outerwear") score += 2;
-      }
-      if (q.includes(item.name.toLowerCase())) score += 4;
-
-      return { item, score };
-    })
-    .sort((a, b) => b.score - a.score);
-
-  const top = scored.filter((x) => x.score > 0).slice(0, 3).map((x) => x.item);
-  return top.length > 0 ? top : listings.slice(0, 3);
 }
 
 export default function RentPage() {
@@ -137,15 +52,21 @@ export default function RentPage() {
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([
     {
       role: "assistant",
-      content:
-        "Hi! Tell me about your event, preferred style, colors, and budget. I will recommend the best rental pieces for you.",
+      content: "Hi! Tell me about your event, preferred style, colors, and budget. I will recommend the best rental pieces for you.",
     },
   ]);
+  const [isLoading, setIsLoading] = useState(false);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  const categories = useMemo(() => {
+    const cats = Array.from(new Set(rentalCatalog.map((item) => item.category)));
+    return cats.sort();
+  }, []);
 
   const filteredListings = useMemo(() => {
     const q = search.trim().toLowerCase();
 
-    return listings.filter((item) => {
+    return rentalCatalog.filter((item) => {
       const matchesCategory = category === "all" || item.category === category;
       const matchesPrice = inPriceBand(item.price, priceFilter);
       const matchesSearch =
@@ -159,23 +80,54 @@ export default function RentPage() {
     });
   }, [search, category, priceFilter]);
 
-  function handleChatSend() {
+  useEffect(() => {
+    if (chatContainerRef.current) {
+      chatContainerRef.current.scrollTo({
+        top: chatContainerRef.current.scrollHeight,
+        behavior: 'smooth'
+      });
+    }
+  }, [chatMessages, isLoading]);
+
+  async function handleChatSend() {
     const prompt = chatInput.trim();
     if (!prompt) return;
 
-    const recs = recommendFromQuery(prompt);
-    const recommendationText = recs
-      .map((item) => `• ${item.name} (${item.category}) - SGD ${item.price}`)
-      .join("\n");
-
-    const assistantReply = `Based on your request, here are my recommendations:\n${recommendationText}\n\nWant me to narrow this down by color, fit, or budget?`;
-
-    setChatMessages((prev) => [
-      ...prev,
-      { role: "user", content: prompt },
-      { role: "assistant", content: assistantReply },
-    ]);
+    setIsLoading(true);
+    const userMessage: ChatMessage = { role: "user", content: prompt };
+    setChatMessages((prev) => [...prev, userMessage]);
     setChatInput("");
+
+    try {
+      const response = await fetch("/api/rent-chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: prompt }),
+      });
+
+      const data = await response.json();
+
+      const assistantMessage: ChatMessage = {
+        role: "assistant",
+        content: data.response || "I couldn't find any items matching your description.",
+        items: data.items || [],
+        queryType: data.queryType,
+        weights: data.weights,
+      };
+
+      setChatMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Chat error:", error);
+      setChatMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: "Sorry, I encountered an error. Please try again.",
+        },
+      ]);
+    } finally {
+      setIsLoading(false);
+    }
   }
 
   return (
@@ -186,7 +138,7 @@ export default function RentPage() {
             <div>
               <CardTitle className="text-2xl font-semibold tracking-tight">Rent Clothes</CardTitle>
               <CardDescription className="mt-1">
-                Browse curated outfits for events, work, and weekends.
+                Browse curated outfits for events, work, and weekends. Test out different styles and rent clothings at reasonable prices!
               </CardDescription>
             </div>
             <Button
@@ -217,11 +169,11 @@ export default function RentPage() {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                <SelectItem value="Dresses">Dresses</SelectItem>
-                <SelectItem value="Suits">Suits</SelectItem>
-                <SelectItem value="Traditional">Traditional</SelectItem>
-                <SelectItem value="Casual">Casual</SelectItem>
-                <SelectItem value="Outerwear">Outerwear</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
@@ -249,15 +201,77 @@ export default function RentPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3 px-5 pb-5 sm:px-6 sm:pb-6">
-            <div className="max-h-64 space-y-2 overflow-y-auto rounded-xl border border-border/60 bg-background/80 p-3">
+            <div 
+              ref={chatContainerRef}
+              className="max-h-[400px] space-y-3 overflow-y-auto rounded-xl border border-border/60 bg-background/80 p-3"
+            >
               {chatMessages.map((msg, idx) => (
-                <div key={`${msg.role}-${idx}`} className="space-y-1">
+                <div key={`${msg.role}-${idx}`} className="space-y-2">
                   <p className="text-[11px] font-semibold uppercase tracking-wider text-muted-foreground">
                     {msg.role === "assistant" ? "AI Stylist" : "You"}
                   </p>
                   <p className="text-sm whitespace-pre-line text-foreground">{msg.content}</p>
+                  
+                  {msg.role === "assistant" && msg.items && msg.items.length > 0 && (
+                    <div className="space-y-3">
+                      <div className="text-xs text-muted-foreground">
+                        Match Score: Total (Keyword + Visual)
+                      </div>
+                      <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                        {msg.items.map((item, index) => (
+                          <Link
+                            key={item.id}
+                            href={`/rent/${item.id}`}
+                            className="block"
+                          >
+                            <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative">
+                              {index === 0 && (
+                                <div className="absolute top-1 left-1 z-10 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
+                                  TOP
+                                </div>
+                              )}
+                              <div className="aspect-square bg-gradient-to-br from-primary/20 via-primary/5 to-chart-2/20">
+                                <img
+                                  src={item.image}
+                                  alt={item.name}
+                                  className="w-full h-full object-cover"
+                                />
+                              </div>
+                              <CardContent className="p-2 space-y-1">
+                                <p className="text-xs font-medium line-clamp-1">{item.name}</p>
+                                <p className="text-xs text-primary font-semibold">SGD {item.price}</p>
+                                <div className="flex flex-wrap gap-1">
+                                  <Badge variant="outline" className="text-[10px] px-1 py-0">
+                                    {item.category}
+                                  </Badge>
+                                </div>
+                                <div className="pt-1 border-t mt-1">
+                                  <div className="flex justify-between items-center">
+                                    <span className="text-[9px] font-semibold text-foreground">
+                                      {item.finalPercent}%
+                                    </span>
+                                  </div>
+                                  <div className="flex justify-between text-[8px] text-muted-foreground mt-0.5">
+                                    <span>KW: {item.keywordPercent}%</span>
+                                    <span>VIS: {item.clipPercent}%</span>
+                                  </div>
+                                </div>
+                              </CardContent>
+                            </Card>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
+              
+              {isLoading && (
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  <span>Finding the perfect items for you...</span>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-2">
@@ -266,8 +280,19 @@ export default function RentPage() {
                 onChange={(e) => setChatInput(e.target.value)}
                 placeholder="Example: I need an elegant look for a wedding dinner, budget under SGD 100."
                 className="min-h-20 rounded-xl bg-background"
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    handleChatSend();
+                  }
+                }}
               />
-              <Button type="button" onClick={handleChatSend} className="h-10 self-end rounded-xl">
+              <Button
+                type="button"
+                onClick={handleChatSend}
+                className="h-10 self-end rounded-xl"
+                disabled={isLoading || !chatInput.trim()}
+              >
                 <SendHorizonal className="mr-1.5 h-4 w-4" />
                 Send
               </Button>
@@ -293,34 +318,37 @@ export default function RentPage() {
             </CardContent>
           </Card>
         ) : (
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
             {filteredListings.map((item) => (
-              <Card key={item.id} className="overflow-hidden rounded-2xl border-border/70 bg-card/90 py-0 transition-shadow hover:shadow-md">
-                <div className="h-24 bg-gradient-to-br from-primary/20 via-primary/5 to-chart-2/20 p-3">
-                  <Badge variant="outline" className="bg-background/80">
-                    {item.category}
-                  </Badge>
-                </div>
-                <CardContent className="space-y-2.5 px-3.5 py-3.5">
-                  <div>
-                    <h3 className="text-sm font-semibold text-foreground">{item.name}</h3>
-                    <p className="mt-1 text-sm text-muted-foreground">{item.description}</p>
+              <Link href={`/rent/${item.id}`} key={item.id}>
+                <Card className="overflow-hidden rounded-2xl border-border/70 bg-card/90 py-0 transition-shadow hover:shadow-md cursor-pointer h-full">
+                  <div className="relative aspect-square bg-gradient-to-br from-primary/20 via-primary/5 to-chart-2/20">
+                    <img
+                      src={item.image}
+                      alt={item.name}
+                      className="w-full h-full object-cover"
+                    />
+                    <Badge variant="outline" className="absolute top-2 left-2 bg-background/80">
+                      {item.category}
+                    </Badge>
                   </div>
+                  <CardContent className="space-y-2.5 px-3.5 py-3.5">
+                    <div>
+                      <h3 className="text-sm font-semibold text-foreground line-clamp-1">{item.name}</h3>
+                      <p className="mt-1 text-xs text-muted-foreground line-clamp-2">{item.description}</p>
+                    </div>
 
-                  <div className="flex flex-wrap gap-2 text-xs">
-                    <Badge variant="secondary">{item.occasion}</Badge>
-                    <Badge variant="outline">Color: {item.color}</Badge>
-                    <Badge variant="outline">Size: {item.size}</Badge>
-                  </div>
+                    <div className="flex flex-wrap gap-1.5 text-xs">
+                      <Badge variant="secondary" className="text-xs">{item.occasion}</Badge>
+                    </div>
 
-                  <div className="flex items-center justify-between pt-1">
-                    <p className="text-sm font-semibold">SGD {item.price} / rental</p>
-                    <Button type="button" variant="outline" className="rounded-lg">
-                      View
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    <div className="flex items-center justify-between pt-1">
+                      <p className="text-sm font-semibold">SGD {item.price} / rental</p>
+                      <span className="text-xs text-muted-foreground">{item.color}</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              </Link>
             ))}
           </div>
         )}

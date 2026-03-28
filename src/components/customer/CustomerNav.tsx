@@ -21,7 +21,7 @@ interface NavLink {
 const navLinks: NavLink[] = [
   { href: "/dashboard", label: "My Orders" },
   { href: "/orders/new", label: "New Order" },
-  { href: "/catalog", label: "Rental", icon: Shirt },
+  { href: "/rent", label: "Rental"},
   { href: "/style", label: "Style AI", icon: Sparkles },
   { href: "/cart", label: "Cart", icon: ShoppingBag },
   { href: "/profile", label: "Profile" },
