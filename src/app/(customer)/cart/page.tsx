@@ -57,12 +57,12 @@ export default function CartPage() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div className="flex items-center gap-4">
-        <Link href="/catalog">
+        <Link href="/rent">
           <Button variant="ghost" size="sm">
             <ChevronLeft className="w-4 h-4" />
           </Button>
         </Link>
-        <h1 className="text-2xl font-bold">Your Cart</h1>
+        <h1 className="text-2xl font-bold">Rental Cart</h1>
         <Badge variant="secondary" className="ml-auto">
           {cartItems.length} items
         </Badge>
@@ -73,8 +73,8 @@ export default function CartPage() {
           <CardContent className="py-12 text-center">
             <ShoppingBag className="w-12 h-12 mx-auto text-gray-300 mb-4" />
             <p className="text-gray-500 mb-4">Your cart is empty</p>
-            <Link href="/catalog">
-              <Button>Browse Catalog</Button>
+            <Link href="/rent">
+              <Button>Browse Rentals</Button>
             </Link>
           </CardContent>
         </Card>
