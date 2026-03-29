@@ -219,9 +219,9 @@ export default function RentProductClient({ item }: Props) {
               </p>
               <div className="overflow-hidden rounded-xl border">
                 <img
-                  src="/tryOnFeature/test1.png"
+                  src="/tryOnFeature/before.jpg"
                   alt="Uploaded source preview"
-                  className="h-80 w-full object-cover"
+                  className="h-80 w-full bg-muted object-contain"
                 />
               </div>
               <Button className="w-full" onClick={handleRunTryOn}>
@@ -250,11 +250,22 @@ export default function RentProductClient({ item }: Props) {
                   : "Try-on result generated (mocked)."}
               </p>
               <div className="overflow-hidden rounded-xl border">
-                <img
-                  src="/tryOnFeature/test2.png"
-                  alt="Try-on result preview"
-                  className="h-80 w-full object-cover"
-                />
+                {tryOnMode === "camera" ? (
+                  <video
+                    src="/tryOnFeature/clothesAR.mov"
+                    className="h-80 w-full bg-muted object-contain"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src="/tryOnFeature/after.png"
+                    alt="Try-on result preview"
+                    className="h-80 w-full bg-muted object-contain"
+                  />
+                )}
               </div>
             </div>
           ) : null}
