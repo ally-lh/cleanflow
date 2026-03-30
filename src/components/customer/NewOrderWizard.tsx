@@ -7,8 +7,9 @@ import {
   createOrderAction,
   analyzeOrderImageAction,
   confirmOrderAction,
+  saveAddressAction,
 } from "@/actions/orders";
-import { enrichItemsWithPrices, calculatePriceBreakdown } from "@/lib/pricing/pricingEngine";
+import { enrichItemsWithPrices, calculatePriceBreakdown, BASE_ORDER_PRICE_SGD } from "@/lib/pricing/pricingEngine";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -62,6 +63,12 @@ export default function NewOrderWizard({ addresses, customerId }: Props) {
   const [items, setItems] = useState<EditableOrderItem[]>([]);
   const [collectionMethod, setCollectionMethod] = useState<CollectionMethod>(CollectionMethod.SELF_COLLECTION);
   const [submitting, setSubmitting] = useState(false);
+  const [localAddresses, setLocalAddresses] = useState<Address[]>(addresses);
+  const [showNewAddrForm, setShowNewAddrForm] = useState(false);
+  const [newAddrLabel, setNewAddrLabel] = useState("");
+  const [newAddrStreet, setNewAddrStreet] = useState("");
+  const [newAddrPostal, setNewAddrPostal] = useState("");
+  const [savingAddr, setSavingAddr] = useState(false);
 
   const stepIndex = ["service", "photo", "review", "schedule"].indexOf(step);
   const progress = ((stepIndex + 1) / 4) * 100;
@@ -88,20 +95,57 @@ export default function NewOrderWizard({ addresses, customerId }: Props) {
     setStep("photo");
   }
 
+  async function handleSaveAddressStep1() {
+    setSavingAddr(true);
+    const fd = new FormData();
+    if (newAddrLabel) fd.append("label", newAddrLabel);
+    fd.append("streetLine1", newAddrStreet);
+    fd.append("postalCode", newAddrPostal);
+    fd.append("city", "Singapore");
+    const result = await saveAddressAction(fd);
+    setSavingAddr(false);
+    if (!result.success) {
+      toast.error(result.error ?? "Failed to save address.");
+      return;
+    }
+    const newAddr = {
+      id: result.data!.addressId,
+      customerId: "",
+      label: newAddrLabel || null,
+      streetLine1: newAddrStreet,
+      streetLine2: null,
+      city: "Singapore",
+      state: null,
+      postalCode: newAddrPostal,
+      country: "Singapore",
+      isDefault: false,
+      lat: null,
+      lng: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Address;
+    setLocalAddresses((prev) => [...prev, newAddr]);
+    setAddressId(result.data!.addressId);
+    setShowNewAddrForm(false);
+    setNewAddrLabel("");
+    setNewAddrStreet("");
+    setNewAddrPostal("");
+    toast.success("Address saved!");
+  }
+
   // ── STEP 2: Photo upload ─────────────────
 
   function handleImageChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    // Preview
     const reader = new FileReader();
-    reader.onload = (ev) => setImagePreview(ev.target?.result as string);
+    reader.onload = (ev) => {
+      const dataUrl = ev.target?.result as string;
+      setImagePreview(dataUrl);
+      setImageUrl(dataUrl); // pass actual image data to AI analysis
+    };
     reader.readAsDataURL(file);
-
-    // In production: upload to UploadThing / S3 here
-    // For prototype: use a mock URL or data URL
-    setImageUrl(`mock://uploaded/${file.name}`);
   }
 
   async function handleAnalyze() {
@@ -271,25 +315,86 @@ export default function NewOrderWizard({ addresses, customerId }: Props) {
               </div>
             </div>
 
-            {pickupMethod === "SCHEDULED_PICKUP" && addresses.length > 0 && (
+            {pickupMethod === "SCHEDULED_PICKUP" && (
               <div className="space-y-2">
                 <Label>Pickup Address</Label>
-                <Select value={addressId} onValueChange={(v) => { if (v !== null) setAddressId(v); }}>
+                <Select value={addressId} onValueChange={(v) => {
+                  if (!v) return;
+                  if (v === "__new__") {
+                    setShowNewAddrForm(true);
+                  } else {
+                    setAddressId(v);
+                    setShowNewAddrForm(false);
+                  }
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select address">
-                      {addresses.find((a) => a.id === addressId)
-                        ? formatAddress(addresses.find((a) => a.id === addressId)!)
+                      {localAddresses.find((a) => a.id === addressId)
+                        ? formatAddress(localAddresses.find((a) => a.id === addressId)!)
                         : null}
                     </SelectValue>
                   </SelectTrigger>
                   <SelectContent>
-                    {addresses.map((a) => (
+                    {localAddresses.map((a) => (
                       <SelectItem key={a.id} value={a.id}>
                         {formatAddress(a)}
                       </SelectItem>
                     ))}
+                    <SelectItem value="__new__">+ Add new address</SelectItem>
                   </SelectContent>
                 </Select>
+                {showNewAddrForm && (
+                  <div className="border rounded-lg p-3 space-y-3 bg-gray-50">
+                    <div className="space-y-1">
+                      <Label className="text-xs">Label (optional)</Label>
+                      <Input
+                        placeholder="e.g. Home, Office"
+                        value={newAddrLabel}
+                        onChange={(e) => setNewAddrLabel(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Street Address *</Label>
+                      <Input
+                        placeholder="e.g. 123 Orchard Road"
+                        value={newAddrStreet}
+                        onChange={(e) => setNewAddrStreet(e.target.value)}
+                        className="h-8 text-sm"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">Postal Code *</Label>
+                      <Input
+                        placeholder="e.g. 238867"
+                        value={newAddrPostal}
+                        onChange={(e) => setNewAddrPostal(e.target.value)}
+                        className="h-8 text-sm"
+                        maxLength={6}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => setShowNewAddrForm(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        className="flex-1"
+                        disabled={!newAddrStreet || !newAddrPostal || savingAddr}
+                        onClick={handleSaveAddressStep1}
+                      >
+                        {savingAddr ? "Saving..." : "Save Address"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             )}
 
@@ -406,6 +511,21 @@ export default function NewOrderWizard({ addresses, customerId }: Props) {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
+              {imagePreview && (
+                <div className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imagePreview}
+                    alt="Your laundry"
+                    className="w-20 h-20 rounded-md object-cover shrink-0"
+                  />
+                  <div className="text-xs text-gray-500 pt-1">
+                    <p className="font-medium text-gray-700 mb-1">Your photo</p>
+                    <p>AI detected items are listed below. Adjust quantities if anything looks off.</p>
+                  </div>
+                </div>
+              )}
+
               <Alert className="bg-amber-50 border-amber-200">
                 <AlertDescription className="text-amber-800 text-xs">
                   Please review and correct the quantities below. The final bill
@@ -514,6 +634,12 @@ export default function NewOrderWizard({ addresses, customerId }: Props) {
                   <span>Estimated Total</span>
                   <Badge variant="outline">Estimate</Badge>
                 </p>
+                {pricing.baseFee > 0 && (
+                  <div className="flex justify-between text-sm text-gray-600">
+                    <span>Base price</span>
+                    <span>SGD {pricing.baseFee.toFixed(2)}</span>
+                  </div>
+                )}
                 {pricing.items.map((item, i) => (
                   <div key={i} className="flex justify-between text-sm text-gray-600">
                     <span>{item.label} × {item.quantity}</span>
@@ -532,7 +658,7 @@ export default function NewOrderWizard({ addresses, customerId }: Props) {
                   <span>SGD {pricing.total.toFixed(2)}</span>
                 </div>
                 <p className="text-xs text-gray-400">
-                  Final amount confirmed after staff inspection.
+                  Includes a base price of SGD {BASE_ORDER_PRICE_SGD.toFixed(2)}, with clothing charges added on top. Final amount confirmed after staff inspection.
                 </p>
               </div>
 
@@ -570,7 +696,7 @@ export default function NewOrderWizard({ addresses, customerId }: Props) {
                 come to collect your laundry.
               </AlertDescription>
             </Alert>
-            <PickupScheduleForm orderId={orderId} addresses={addresses} addressId={addressId} onDone={handleScheduleDone} />
+            <PickupScheduleForm orderId={orderId} addresses={localAddresses} addressId={addressId} onDone={handleScheduleDone} />
           </CardContent>
         </Card>
       )}
@@ -597,8 +723,52 @@ function PickupScheduleForm({
   const [selectedSlot, setSelectedSlot] = useState("");
   const [selectedAddress, setSelectedAddress] = useState(defaultAddressId);
   const [submitting, setSubmitting] = useState(false);
+  const [scheduleAddresses, setScheduleAddresses] = useState<Address[]>(addresses);
+  const [showNewAddrForm, setShowNewAddrForm] = useState(false);
+  const [newAddrLabel, setNewAddrLabel] = useState("");
+  const [newAddrStreet, setNewAddrStreet] = useState("");
+  const [newAddrPostal, setNewAddrPostal] = useState("");
+  const [savingAddr, setSavingAddr] = useState(false);
 
   const { requestPickupAction } = require("@/actions/orders");
+
+  async function handleSaveAddress() {
+    setSavingAddr(true);
+    const fd = new FormData();
+    if (newAddrLabel) fd.append("label", newAddrLabel);
+    fd.append("streetLine1", newAddrStreet);
+    fd.append("postalCode", newAddrPostal);
+    fd.append("city", "Singapore");
+    const result = await saveAddressAction(fd);
+    setSavingAddr(false);
+    if (!result.success) {
+      toast.error(result.error ?? "Failed to save address.");
+      return;
+    }
+    const newAddr = {
+      id: result.data!.addressId,
+      customerId: "",
+      label: newAddrLabel || null,
+      streetLine1: newAddrStreet,
+      streetLine2: null,
+      city: "Singapore",
+      state: null,
+      postalCode: newAddrPostal,
+      country: "Singapore",
+      isDefault: false,
+      lat: null,
+      lng: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as Address;
+    setScheduleAddresses((prev) => [...prev, newAddr]);
+    setSelectedAddress(result.data!.addressId);
+    setShowNewAddrForm(false);
+    setNewAddrLabel("");
+    setNewAddrStreet("");
+    setNewAddrPostal("");
+    toast.success("Address saved!");
+  }
 
   const timeSlots = [
     { value: "09:00-11:00", label: "Morning (9am – 11am)" },
@@ -683,27 +853,86 @@ function PickupScheduleForm({
         </div>
       </div>
 
-      {addresses.length > 0 && (
-        <div className="space-y-2">
-          <Label>Pickup Address</Label>
-          <Select value={selectedAddress} onValueChange={(v) => { if (v !== null) setSelectedAddress(v); }}>
-            <SelectTrigger>
-              <SelectValue placeholder="Select address">
-                {addresses.find((a) => a.id === selectedAddress)
-                  ? formatAddress(addresses.find((a) => a.id === selectedAddress)!)
-                  : null}
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              {addresses.map((a) => (
-                <SelectItem key={a.id} value={a.id}>
-                  {formatAddress(a)}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      )}
+      <div className="space-y-2">
+        <Label>Pickup Address</Label>
+        <Select value={selectedAddress} onValueChange={(v) => {
+          if (!v) return;
+          if (v === "__new__") {
+            setShowNewAddrForm(true);
+          } else {
+            setSelectedAddress(v);
+            setShowNewAddrForm(false);
+          }
+        }}>
+          <SelectTrigger>
+            <SelectValue placeholder="Select address">
+              {scheduleAddresses.find((a) => a.id === selectedAddress)
+                ? formatAddress(scheduleAddresses.find((a) => a.id === selectedAddress)!)
+                : null}
+            </SelectValue>
+          </SelectTrigger>
+          <SelectContent>
+            {scheduleAddresses.map((a) => (
+              <SelectItem key={a.id} value={a.id}>
+                {formatAddress(a)}
+              </SelectItem>
+            ))}
+            <SelectItem value="__new__">+ Add new address</SelectItem>
+          </SelectContent>
+        </Select>
+        {showNewAddrForm && (
+          <div className="border rounded-lg p-3 space-y-3 bg-gray-50">
+            <div className="space-y-1">
+              <Label className="text-xs">Label (optional)</Label>
+              <Input
+                placeholder="e.g. Home, Office"
+                value={newAddrLabel}
+                onChange={(e) => setNewAddrLabel(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Street Address *</Label>
+              <Input
+                placeholder="e.g. 123 Orchard Road"
+                value={newAddrStreet}
+                onChange={(e) => setNewAddrStreet(e.target.value)}
+                className="h-8 text-sm"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Postal Code *</Label>
+              <Input
+                placeholder="e.g. 238867"
+                value={newAddrPostal}
+                onChange={(e) => setNewAddrPostal(e.target.value)}
+                className="h-8 text-sm"
+                maxLength={6}
+              />
+            </div>
+            <div className="flex gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="flex-1"
+                onClick={() => setShowNewAddrForm(false)}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                className="flex-1"
+                disabled={!newAddrStreet || !newAddrPostal || savingAddr}
+                onClick={handleSaveAddress}
+              >
+                {savingAddr ? "Saving..." : "Save Address"}
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
       <div className="flex gap-3">
         <Button variant="outline" onClick={onDone} className="flex-1">

@@ -13,6 +13,8 @@ import {
   CURRENCY,
 } from "@/types/constants";
 
+export const BASE_ORDER_PRICE_SGD = 10;
+
 // ──────────────────────────────────────────
 // DEFAULT PRICES (SGD) — used if DB is unavailable
 // ──────────────────────────────────────────
@@ -73,9 +75,10 @@ export function calculatePriceBreakdown(
       };
     });
 
-  const subtotal = parseFloat(
-    breakdownItems.reduce((sum, i) => sum + i.lineTotal, 0).toFixed(2)
-  );
+  const itemsTotal = breakdownItems.reduce((sum, i) => sum + i.lineTotal, 0);
+  const hasItems = breakdownItems.length > 0;
+  const baseFee = hasItems ? BASE_ORDER_PRICE_SGD : 0;
+  const subtotal = parseFloat((baseFee + itemsTotal).toFixed(2));
 
   // Delivery fee logic: free if order exceeds threshold
   const deliveryFee = isDelivery
@@ -88,6 +91,7 @@ export function calculatePriceBreakdown(
 
   return {
     items: breakdownItems,
+    baseFee,
     subtotal,
     deliveryFee,
     discount: 0,
