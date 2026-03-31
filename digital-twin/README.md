@@ -1,73 +1,104 @@
-# CleanFlow — Digital Twin / Logistics Simulation
+# CleanFlow — Digital Twin Dashboard
 
-This folder is for the **digital twin teammate**.
+A real-time fleet operations dashboard that simulates CleanFlow's laundry logistics across Singapore.
 
-## What to build here
+## Quick Start
 
-Simulate the delivery and pickup logistics of CleanFlow to model
-efficiency, routing, and expansion scenarios.
+```bash
+# 1. Install dependencies
+cd digital-twin
+npm install
 
-## Architecture integration points
-
-### Live data API
-
-```
-GET /api/dispatch/live
+# 2. Start the dashboard
+npm run dev
 ```
 
-Returns:
-```json
-{
-  "drivers": [
-    { "driverId": "...", "driverName": "...", "lat": 1.3521, "lng": 103.8198, "lastUpdated": "...", "isLive": false }
-  ],
-  "deliveries": [
-    { "orderId": "...", "orderNumber": "...", "dropoffLat": 1.35, "dropoffLng": 103.82, "status": "OUT_FOR_DELIVERY" }
-  ]
-}
+Open `http://localhost:5173`. The dashboard runs a workday simulation automatically.
+
+To connect to the live backend (optional):
+```bash
+# In the project root, start the Next.js server
+npm run dev
 ```
+The Vite dev server proxies `/api` requests to `localhost:3000`.
 
-### Driver location update (future)
+## What It Does
 
-```
-POST /api/dispatch/location
-Body: { "driverId": "...", "lat": ..., "lng": ..., "token": "..." }
-```
+The dashboard simulates a compressed 8-hour workday (8am–4pm) in ~5 minutes:
 
-## Suggested simulation components
+- **8 trucks** depart from a central depot
+- **Delivery runs**: trucks deliver clean laundry (yesterday's collections) to multiple customer locations
+- **Collection runs**: trucks collect dirty laundry from customers and return to depot
+- **Congestion**: trucks slow down during AM/PM peak hours in high-risk districts
+- **Late detection**: orders flagged when delivery exceeds time threshold
 
-### 1. Route simulation
-- Model driver routes from store → customer → store
-- Use OSRM or Google Directions API for realistic road routing
-- Simulate multi-stop routes (one driver, multiple pickups)
+### Key Features
 
-### 2. Capacity planning
-- Given N orders per day, how many drivers are needed?
-- What is the average travel time per order?
-- Where should a second store be located?
+- **Dark Leaflet map** with real Singapore road paths
+- **Truck markers** with direction-of-travel arrows and status colors
+- **Order pins**: amber = collection pickup, cyan = delivery dropoff
+- **Fleet Activity panel** (bottom-right): live status of all 8 trucks
+- **Analytics Insights panel** (bottom-left): contextual recommendations powered by Python analytics data
+- **HUD bar** (top): sim clock, collected/delivered counts, on-time %, speed toggle
+- **Day summary**: end-of-day stats with "Start Next Day" option
+- **Layer toggles**: trucks, routes, orders, demand zones, density, congestion, expansion
 
-### 3. Three.js / 3D map dashboard (frontend)
-The frontend placeholder for the 3D map is at:
-`src/lib/maps/placeholder.ts`
+### Analytics Integration
 
-When ready to build the 3D map:
-1. Install: `npm install three @react-three/fiber @react-three/drei`
-2. Create: `src/components/admin/DispatchMap.tsx`
-3. Use the `DispatchBoardState` type from `src/lib/maps/placeholder.ts`
-4. Fetch live data from `/api/dispatch/live` (poll every 30s or use WebSocket)
+The dashboard consumes data from `python-analytics/`:
+- **Congestion data**: district risk levels, peak-hour factors, optimal dispatch windows
+- **Demand patterns**: order density by postal district
+- **Expansion opportunities**: high-demand districts far from depot
+- **Route optimization**: baseline vs optimized distance savings
 
-## Files to create
+If the analytics snapshot is unavailable, built-in fallback data ensures all recommendations still work.
 
-| File | Purpose |
-|------|---------|
-| `simulation.py` | Monte Carlo delivery simulation |
-| `route_optimizer.py` | Multi-stop route optimization |
-| `capacity_model.py` | Driver count vs order volume analysis |
-| `twin_api.py` | Push simulation state to CleanFlow API |
-| `notebooks/simulation.ipynb` | Interactive simulation notebook |
+## Tech Stack
 
-## Store coordinates (placeholder)
+- **React 19** + **TypeScript**
+- **Vite** (dev server + build)
+- **Leaflet** + **react-leaflet** (map)
+- **Tailwind CSS** (styling)
+
+## Project Structure
 
 ```
-Store: 1.3048° N, 103.8318° E  (CleanFlow HQ placeholder)
+digital-twin/
+  src/
+    App.tsx                         # Main shell
+    types.ts                        # TypeScript interfaces
+    hooks/
+      useWorkdaySim.ts              # Workday simulation engine
+      useDispatchLive.ts            # Live API polling (when backend available)
+      useAnalyticsSnapshot.ts       # Analytics data fetching
+    lib/
+      simTypes.ts                   # Simulation types & constants
+      simPathBuilder.ts             # Road path routing (multi-hop)
+      simCongestion.ts              # Congestion speed modifiers
+      simOrderGenerator.ts          # Day plan generation
+      recommendations.ts            # Contextual recommendation engine
+      roadPaths.ts                  # Singapore road coordinate data
+      congestionData.ts             # District congestion config
+      districtCentroids.ts          # Postal district locations
+      layerConfig.ts                # Map layer configuration
+      truckIcon.ts                  # Truck marker SVG icons
+    components/
+      TwinMap.tsx                   # Leaflet map with all layers
+      layers/                       # Map overlay layers
+      overlays/                     # HUD, fleet panel, insights, etc.
+  public/
+    analytics_snapshot.json         # Fallback analytics data
+```
+
+## API Endpoints (from Next.js backend)
+
+| Endpoint | Purpose |
+|----------|---------|
+| `GET /api/dispatch/live` | Live driver positions + active deliveries |
+| `GET /api/analytics/snapshot` | Analytics data from Python pipeline (requires admin auth) |
+
+## Build
+
+```bash
+npm run build    # Output to digital-twin/dist/
 ```
