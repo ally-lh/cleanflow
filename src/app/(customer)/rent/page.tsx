@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, useRef, useEffect } from "react";
-import { Sparkles, Search, SlidersHorizontal, Bot, SendHorizonal, Loader2 } from "lucide-react";
+import { Sparkles, Search, SlidersHorizontal, Bot, SendHorizonal, Loader2, ShoppingCart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -36,6 +36,8 @@ type ChatMessage = {
   weights?: { keyword: number; clip: number };
 };
 
+const CART_KEY = "cleanflow_cart";
+
 function inPriceBand(price: number, band: PriceFilter) {
   if (band === "under-50") return price < 50;
   if (band === "50-100") return price >= 50 && price <= 100;
@@ -56,7 +58,34 @@ export default function RentPage() {
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
+  const [cartCount, setCartCount] = useState(0);
   const chatContainerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const syncCartCount = () => {
+      try {
+        const saved = localStorage.getItem(CART_KEY);
+        if (!saved) {
+          setCartCount(0);
+          return;
+        }
+
+        const parsed = JSON.parse(saved);
+        setCartCount(Array.isArray(parsed) ? parsed.length : 0);
+      } catch {
+        setCartCount(0);
+      }
+    };
+
+    syncCartCount();
+    window.addEventListener("storage", syncCartCount);
+    window.addEventListener("focus", syncCartCount);
+
+    return () => {
+      window.removeEventListener("storage", syncCartCount);
+      window.removeEventListener("focus", syncCartCount);
+    };
+  }, []);
 
   const categories = useMemo(() => {
     const cats = Array.from(new Set(rentalCatalog.map((item) => item.category)));
@@ -358,6 +387,17 @@ export default function RentPage() {
           </div>
         )}
       </section>
+
+      <Link
+        href="/cart"
+        aria-label={`Open cart with ${cartCount} item${cartCount === 1 ? "" : "s"}`}
+        className="fixed right-4 bottom-20 z-40 inline-flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:scale-[1.02] hover:shadow-xl sm:right-6 sm:bottom-6"
+      >
+        <ShoppingCart className="h-6 w-6" />
+        <span className="absolute -top-1 -right-1 inline-flex min-h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-bold leading-none text-destructive-foreground">
+          {cartCount}
+        </span>
+      </Link>
     </div>
   );
 }
