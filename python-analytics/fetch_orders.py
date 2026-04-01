@@ -12,6 +12,7 @@ from typing import Tuple
 import pandas as pd
 import requests
 
+
 API_URL = os.getenv("CLEANFLOW_API_URL", "http://localhost:3000").rstrip("/")
 API_KEY = os.getenv("ANALYTICS_API_KEY", "")
 DEFAULT_PAGE_SIZE = 500
@@ -29,7 +30,10 @@ def fetch_orders_page(
 ) -> Tuple[pd.DataFrame, dict]:
     """Fetch one page from the analytics API. Returns (DataFrame, raw meta)."""
     url = f"{API_URL}/api/analytics/orders"
-    headers = {"Authorization": f"Bearer {API_KEY}"}
+    headers = {
+    "Authorization": "anything-random-for-now",
+    "Content-Type": "application/json"
+    }
     params = {"limit": limit, "offset": offset}
 
     response = requests.get(url, headers=headers, params=params, timeout=120)
