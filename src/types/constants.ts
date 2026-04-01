@@ -111,7 +111,7 @@ export const FREE_DELIVERY_THRESHOLD_SGD = 50.0;
 // MISC
 // ──────────────────────────────────────────
 
-export const APP_NAME = "Pacific Cleaners";
-export const STORE_NAME = "CleanFlow Laundry";
+export const APP_NAME = "QT Laundry";
+export const STORE_NAME = "QT Laundry Store";
 export const STORE_ADDRESS = "123 Orchard Road, Singapore 238858";
 export const CURRENCY = "SGD";
