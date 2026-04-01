@@ -76,4 +76,49 @@ export interface AnalyticsSnapshot {
   };
   business?: BusinessData;
   expansion?: ExpansionData;
+  charts?: {
+    kpis?: {
+      totalOrders?: number;
+      totalRevenue?: number;
+      avgOrderValue?: number;
+      totalDistanceSavedKm?: number;
+      avgSavingsRatePercent?: number;
+    };
+    operationalEfficiency?: {
+      drivers?: Array<{
+        driverId: string;
+        driverLabel?: string;
+        baselineKm: number;
+        optimizedKm: number;
+        savingsKm: number;
+        savingsPercent: number;
+        stops: number;
+      }>;
+      scatterStopsVsDistance?: Array<{
+        driverId: string;
+        driverLabel?: string;
+        stops: number;
+        distanceKm: number;
+      }>;
+    };
+    revenueMix?: {
+      totalRevenue?: number;
+      services?: Array<{
+        serviceType: string;
+        revenue: number;
+        avgOrderValue: number;
+        orderCount: number;
+        revenuePercent: number;
+      }>;
+    };
+    demandPatterns?: {
+      topDistricts?: Array<{ district: string; orders: number }>;
+    };
+    expansionAnalysis?: {
+      rankedDistricts?: ExpansionDistrict[];
+    };
+    timeSeries?: {
+      daily?: Array<{ date: string; orders: number }>;
+    };
+  };
 }
