@@ -5,7 +5,14 @@ import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ShoppingCart, ArrowLeft, Sparkles } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { ShoppingCart, ArrowLeft, Sparkles, Upload, Camera } from "lucide-react";
 import Link from "next/link";
 import { RentalItem } from "@/data/rentalCatalog";
 
@@ -33,6 +40,9 @@ export default function RentProductClient({ item }: Props) {
   const [added, setAdded] = useState(false);
   const [similarItems, setSimilarItems] = useState<SimilarItem[]>([]);
   const [loadingSimilar, setLoadingSimilar] = useState(false);
+  const [tryOnOpen, setTryOnOpen] = useState(false);
+  const [tryOnMode, setTryOnMode] = useState<"upload" | "camera" | null>(null);
+  const [tryOnStep, setTryOnStep] = useState<"select" | "preview" | "loading" | "result">("select");
   const router = useRouter();
 
   const addToCart = () => {
@@ -120,6 +130,36 @@ export default function RentProductClient({ item }: Props) {
 
     fetchSimilarItems();
   }, [item]);
+  const openTryOn = () => {
+    setTryOnOpen(true);
+    setTryOnMode(null);
+    setTryOnStep("select");
+  };
+
+  const closeTryOn = (open: boolean) => {
+    setTryOnOpen(open);
+    if (!open) {
+      setTryOnMode(null);
+      setTryOnStep("select");
+    }
+  };
+
+  const handleUploadSelected = () => {
+    setTryOnMode("upload");
+    setTryOnStep("preview");
+  };
+
+  const handleRunTryOn = () => {
+    setTryOnStep("loading");
+    setTimeout(() => {
+      setTryOnStep("result");
+    }, 1600);
+  };
+
+  const handleLiveCamera = () => {
+    setTryOnMode("camera");
+    setTryOnStep("result");
+  };
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -194,6 +234,11 @@ export default function RentProductClient({ item }: Props) {
                   {selectedSize ? "Add to Cart" : "Select a Size"}
                 </Button>
               )}
+
+              <Button className="w-full" size="lg" variant="outline" onClick={openTryOn}>
+                <Sparkles className="w-4 h-4" />
+                Try it on
+              </Button>
             </CardContent>
           </Card>
 
@@ -249,6 +294,91 @@ export default function RentProductClient({ item }: Props) {
           </CardContent>
         </Card>
       )}
+      <Dialog open={tryOnOpen} onOpenChange={closeTryOn}>
+        <DialogContent className="sm:max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Try It On</DialogTitle>
+            <DialogDescription>
+              Upload an image of yourself or use live camera to preview this look.
+            </DialogDescription>
+          </DialogHeader>
+
+          {tryOnStep === "select" ? (
+            <div className="space-y-3">
+              <Button
+                className="w-full items-center justify-center"
+                variant="outline"
+                onClick={handleUploadSelected}
+              >
+                <Upload className="mr-1 h-4 w-4" />
+                Upload Image
+              </Button>
+              <Button className="w-full items-center justify-center" variant="outline" onClick={handleLiveCamera}>
+                <Camera className="mr-1 h-4 w-4" />
+                Use Live Camera
+              </Button>
+            </div>
+          ) : null}
+
+          {tryOnStep === "preview" ? (
+            <div className="space-y-3">
+              <p className="rounded-md border border-emerald-300 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                Image uploaded successfully.
+              </p>
+              <div className="overflow-hidden rounded-xl border">
+                <img
+                  src="/tryOnFeature/before.jpg"
+                  alt="Uploaded source preview"
+                  className="h-80 w-full bg-muted object-contain"
+                />
+              </div>
+              <Button className="w-full" onClick={handleRunTryOn}>
+                <Sparkles className="mr-2 h-4 w-4" />
+                Try it on
+              </Button>
+            </div>
+          ) : null}
+
+          {tryOnStep === "loading" ? (
+            <div className="space-y-3">
+              <div className="h-2 overflow-hidden rounded-full bg-muted">
+                <div className="h-full w-1/2 animate-pulse bg-primary" />
+              </div>
+              <p className="text-sm text-muted-foreground">
+                Projecting the 3D clothing model onto your image...
+              </p>
+            </div>
+          ) : null}
+
+          {tryOnStep === "result" ? (
+            <div className="space-y-3">
+              <p className="text-sm text-muted-foreground">
+                {tryOnMode === "camera"
+                  ? "Live camera AR preview (mocked)."
+                  : "Try-on result generated (mocked)."}
+              </p>
+              <div className="overflow-hidden rounded-xl border">
+                {tryOnMode === "camera" ? (
+                  <video
+                    src="/tryOnFeature/clothesAR.mov"
+                    className="h-80 w-full bg-muted object-contain"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                  />
+                ) : (
+                  <img
+                    src="/tryOnFeature/after.png"
+                    alt="Try-on result preview"
+                    className="h-80 w-full bg-muted object-contain"
+                  />
+                )}
+              </div>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
