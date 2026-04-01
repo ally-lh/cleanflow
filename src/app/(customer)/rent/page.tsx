@@ -162,6 +162,9 @@ export default function RentPage() {
               />
             </div>
 
+          </div>
+          <div className="flex flex-wrap gap-3 p-4 bg-gray-50 rounded-lg">
+              <span className="self-center">Category</span>
             <Select value={category} onValueChange={(v) => v !== null && setCategory(v)}>
               <SelectTrigger className="h-10 w-full rounded-xl sm:w-44">
                 <SlidersHorizontal className="h-3.5 w-3.5 text-muted-foreground" />
@@ -177,6 +180,7 @@ export default function RentPage() {
               </SelectContent>
             </Select>
 
+            <span className="self-center">Price</span>
             <Select value={priceFilter} onValueChange={(v) => v !== null && setPriceFilter(v as PriceFilter)}>
               <SelectTrigger className="h-10 w-full rounded-xl sm:w-36">
                 <SelectValue placeholder="Price" />
@@ -188,7 +192,8 @@ export default function RentPage() {
                 <SelectItem value="100-plus">Above SGD 100</SelectItem>
               </SelectContent>
             </Select>
-          </div>
+            </div>
+
         </CardHeader>
       </Card>
 
@@ -224,20 +229,20 @@ export default function RentPage() {
                             href={`/rent/${item.id}`}
                             className="block"
                           >
-                            <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative">
+                            <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer relative pt-0">
                               {index === 0 && (
                                 <div className="absolute top-1 left-1 z-10 bg-primary text-primary-foreground text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                                   TOP
                                 </div>
                               )}
-                              <div className="aspect-square bg-gradient-to-br from-primary/20 via-primary/5 to-chart-2/20">
+                              <div className="w-full h-48">
                                 <img
                                   src={item.image}
                                   alt={item.name}
                                   className="w-full h-full object-cover"
                                 />
                               </div>
-                              <CardContent className="p-2 space-y-1">
+                              <CardContent className=" space-y-1">
                                 <p className="text-xs font-medium line-clamp-1">{item.name}</p>
                                 <p className="text-xs text-primary font-semibold">SGD {item.price}</p>
                                 <div className="flex flex-wrap gap-1">
@@ -322,7 +327,7 @@ export default function RentPage() {
             {filteredListings.map((item) => (
               <Link href={`/rent/${item.id}`} key={item.id}>
                 <Card className="overflow-hidden rounded-2xl border-border/70 bg-card/90 py-0 transition-shadow hover:shadow-md cursor-pointer h-full">
-                  <div className="relative aspect-square bg-gradient-to-br from-primary/20 via-primary/5 to-chart-2/20">
+                  <div className="w-full h-80 relative">
                     <img
                       src={item.image}
                       alt={item.name}

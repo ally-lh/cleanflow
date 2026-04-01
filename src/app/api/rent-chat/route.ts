@@ -10,13 +10,14 @@ const OCCASION_KEYWORDS: Record<string, string[]> = {
   dinner: ["dinner", "evening", "formal", "gala", "party", "date", "night", "wedding"],
 };
 
-const KNOWN_KEYWORDS = new Set([
-  "wear", "clothing", "dress", "outfit", "style", "fashion", "jumpsuit",
-  "romper", "top", "suit", "color", "casual", "formal", "party", "wedding",
-  "work", "office", "evening", "elegant", "cheap", "budget", "black", "white",
-  "blue", "green", "yellow", "red", "pink", "beige", "grey", "luxury",
-  "expensive", "premium", "affordable", "chic", "vintage", "modern"
-]);
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  dress: ["dress", "gown", "dresses"],
+  jumpsuit: ["jumpsuit"],
+  romper: ["romper"],
+  top: ["top", "tops", "vest", "blouse", "shirt"],
+  suit: ["suit", "suits", "blazer"],
+  jacket: ["jacket", "coat"],
+};
 
 function extractBudget(query: string): number | null {
   const patterns = [
@@ -43,6 +44,14 @@ function keywordSearch(query: string, budget: number | null) {
   const q = query.toLowerCase();
   const queryWords = q.split(/\s+/).filter(w => w.length > 1);
   const scores: { id: string; imageFilename: string; score: number }[] = [];
+  
+  let extractedCategory: string | null = null;
+  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some(kw => q.includes(kw))) {
+      extractedCategory = cat;
+      break;
+    }
+  }
 
   for (const item of rentalCatalog) {
     let score = 0;
@@ -52,25 +61,33 @@ function keywordSearch(query: string, budget: number | null) {
     const color = item.color.toLowerCase();
     const description = item.description.toLowerCase();
     const brand = item.brand.toLowerCase();
-
-    if (category.includes(q)) score += 5;
+    
+    if (extractedCategory && category === extractedCategory) {
+      score += 10;
+    } else if (extractedCategory && category.includes(q)) {
+      score += 5;
+    } else if (!extractedCategory && category.includes(q)) {
+      score += 5;
+    }
     
     const occasionMatch = Object.entries(OCCASION_KEYWORDS).find(([_, kws]) =>
       kws.some(kw => q.includes(kw))
     );
     if (occasionMatch && occasion.includes(occasionMatch[0])) {
-      score += 4;
+      score += 8;
+    } else if (occasionMatch && !occasion.includes(occasionMatch[0])) {
+      score -= 5;
     }
 
-    if (color.includes(q)) score += 3;
+    if (color.includes(q) || q.split(/\s+/).some(w => w.length >= 3 && color.includes(w))) score += 5;
 
-    const clothingTypes = ["dress", "jumpsuit", "romper", "top", "suit", "vest", "jacket"];
-    for (const type of clothingTypes) {
-      if (q.includes(type) && (name.includes(type) || category.includes(type))) {
-        score += 6;
-        break;
-      }
-    }
+    // const clothingTypes = ["dress", "jumpsuit", "romper", "top", "suit", "vest", "jacket"];
+    // for (const type of clothingTypes) {
+      // if (q.includes(type) && (name.includes(type) || category.includes(type))) {
+      //   score += 6;
+      //   break;
+      // }
+    // }
 
     if (brand.includes(q)) score += 2;
 
@@ -109,7 +126,7 @@ export async function POST(request: Request) {
     const userMessage = message.toLowerCase().trim();
 
     const fashionKeywords = [
-      "wear", "clothing", "dress", "outfit", "style", "fashion", "jumpsuit",
+      "wear", "clothing", "dress", "outfit", "fit", "shirt", "style", "fashion", "jumpsuit",
       "romper", "top", "suit", "color", "casual", "formal", "party", "wedding",
       "work", "office", "evening", "elegant", "cheap", "budget", "black", "white",
       "blue", "green", "yellow", "red", "pink", "beige", "grey", "luxury",
@@ -176,21 +193,8 @@ export async function POST(request: Request) {
       const normalizedKeyword = Math.min(kw.score / 15, 1);
       const keywordPercent = normalizedKeyword * 100;
       
-      let dynamicKeywordWeight: number;
-      let dynamicClipWeight: number;
-      
-      if (keywordPercent < 35) {
-        dynamicKeywordWeight = 0.3;
-        dynamicClipWeight = 0.7;
-      } else if (keywordPercent < 60) {
-        dynamicKeywordWeight = 0.5;
-        dynamicClipWeight = 0.5;
-      } else {
-        dynamicKeywordWeight = 0.8;
-        dynamicClipWeight = 0.2;
-      }
-      
-      const finalScore = (dynamicKeywordWeight * normalizedKeyword) + (dynamicClipWeight * clipScore);
+      const finalScore = normalizedKeyword + clipScore;
+      const finalPercent = Math.min(finalScore * 50, 100);
       
       return {
         id: kw.id,
@@ -199,13 +203,17 @@ export async function POST(request: Request) {
         keywordPercent: Math.round(keywordPercent),
         clipScore,
         clipPercent: Math.round(clipScore * 100),
-        finalPercent: Math.round(finalScore * 100),
-        weights: { keyword: dynamicKeywordWeight, clip: dynamicClipWeight }
+        finalPercent: Math.round(finalPercent),
       };
     });
 
     combined.sort((a, b) => b.finalPercent - a.finalPercent);
-    const topItems = combined.slice(0, 5);
+    
+    const filteredCombined = combined.filter(item => 
+      item.keywordPercent > 0 || item.clipPercent > 0
+    );
+    
+    const topItems = filteredCombined.slice(0, 5);
 
     const responseItems = topItems.map(result => {
       const item = rentalCatalog.find(i => i.id === result.id);
@@ -235,7 +243,7 @@ export async function POST(request: Request) {
     }
 
     const topItem = responseItems[0];
-    let response = `I found ${responseItems.length} items for you!`;
+    let response = `I found top ${responseItems.length} items for you!`;
     
     if (budget) {
       response += ` Showing items within SGD ${budget}.`;
