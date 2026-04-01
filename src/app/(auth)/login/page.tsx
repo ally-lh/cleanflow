@@ -5,7 +5,7 @@ import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { toast } from "sonner";
-import { ArrowRight, ShieldCheck, Sparkles, Truck } from "lucide-react";
+import { ArrowRight, WashingMachine } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,32 +54,17 @@ export default function LoginPage() {
       <div className="relative mx-auto grid w-full max-w-5xl gap-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <section className="hidden rounded-3xl border border-border/70 bg-card/75 p-8 shadow-lg backdrop-blur md:block lg:p-10">
           <div className="inline-flex items-center gap-2 rounded-full border border-border/70 bg-background/70 px-3 py-1 text-xs font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-            <Sparkles className="h-3.5 w-3.5" />
             Laundry Flow, Refined
           </div>
           <h1 className="mt-5 text-4xl font-semibold leading-tight text-foreground lg:text-5xl">
             Keep your laundry operations smooth from pickup to delivery.
           </h1>
-          <p className="mt-4 max-w-lg text-base leading-relaxed text-muted-foreground">
-            Manage orders, scheduling, and status updates in one place with a cleaner interface your team can move through quickly.
-          </p>
-
-          <div className="mt-8 grid gap-3 text-sm">
-            <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/75 px-4 py-3">
-              <ShieldCheck className="h-4 w-4 text-primary" />
-              Secure account access and role-based dashboards
-            </div>
-            <div className="flex items-center gap-3 rounded-xl border border-border/70 bg-background/75 px-4 py-3">
-              <Truck className="h-4 w-4 text-primary" />
-              Live dispatch visibility for every order
-            </div>
-          </div>
         </section>
 
         <div className="w-full">
           <div className="mb-5 text-center lg:text-left">
             <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-lg text-primary-foreground shadow-sm">
-              🧺
+              <WashingMachine className="h-6 w-6" />
             </div>
             <h2 className="mt-3 text-2xl font-semibold tracking-tight text-foreground">{APP_NAME}</h2>
             <p className="mt-1 text-sm text-muted-foreground">Laundry made smart.</p>
