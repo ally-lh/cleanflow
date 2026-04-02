@@ -24,7 +24,7 @@ export function buildRouteKpis(snapshot: AnalyticsSnapshot) {
     optimizedKm: asNumber(route?.optimizedKm),
     savingsKm: asNumber(route?.savingsKm),
     savingsPercent: asNumber(route?.savingsPercent),
-    assumption: route?.assumption ?? "No assumptions provided.",
+    assumption: route?.assumption ?? "",
     nStops: asNumber(route?.nStops),
     twoOptApplied: Boolean(route?.twoOptApplied),
     roadFactor: asNumber(route?.roadFactor, 1),
@@ -40,17 +40,40 @@ export function buildDistrictHeatData(snapshot: AnalyticsSnapshot) {
       district,
       count,
       intensity: count / max,
+      filled: Math.max(0, Math.min(24, Math.round((count / max) * 24))),
     }))
     .sort((a, b) => b.count - a.count);
 }
 
-export function buildDistrictHeatMatrix(snapshot: AnalyticsSnapshot, columns = 5) {
-  const rows = buildDistrictHeatData(snapshot);
-  const chunked: Array<typeof rows> = [];
-  for (let i = 0; i < rows.length; i += columns) {
-    chunked.push(rows.slice(i, i + columns));
-  }
-  return chunked;
+export function buildTopKpis(snapshot: AnalyticsSnapshot) {
+  const k = snapshot.charts?.kpis;
+  return {
+    totalOrders: asNumber(k?.totalOrders),
+    totalRevenue: asNumber(k?.totalRevenue),
+    avgOrderValue: asNumber(k?.avgOrderValue),
+    totalDistanceSavedKm: asNumber(k?.totalDistanceSavedKm),
+    avgSavingsRatePercent: asNumber(k?.avgSavingsRatePercent),
+  };
+}
+
+export function buildOperationalDrivers(snapshot: AnalyticsSnapshot) {
+  const drivers = snapshot.charts?.operationalEfficiency?.drivers ?? [];
+  return [...drivers].sort((a, b) => b.savingsKm - a.savingsKm);
+}
+
+export function buildOperationalScatter(snapshot: AnalyticsSnapshot) {
+  return snapshot.charts?.operationalEfficiency?.scatterStopsVsDistance ?? [];
+}
+
+export function buildRevenueMixCharts(snapshot: AnalyticsSnapshot) {
+  const services = snapshot.charts?.revenueMix?.services ?? [];
+  const sorted = [...services].sort((a, b) => b.revenue - a.revenue);
+  return {
+    services: sorted,
+    revenueBar: sorted.map((s) => ({ serviceType: s.serviceType, revenue: s.revenue })),
+    aovBar: sorted.map((s) => ({ serviceType: s.serviceType, avgOrderValue: s.avgOrderValue })),
+    revenuePie: sorted.map((s) => ({ name: s.serviceType, value: s.revenue, percent: s.revenuePercent })),
+  };
 }
 
 export function buildRevenueBars(business: BusinessData | undefined) {
@@ -80,19 +103,37 @@ export function buildExpansionScatter(expansion: ExpansionData | undefined) {
   const medianX = xVals.length ? xVals.sort((a, b) => a - b)[Math.floor(xVals.length / 2)] : 0;
   const medianY = yVals.length ? yVals.sort((a, b) => a - b)[Math.floor(yVals.length / 2)] : 0;
   const heuristic = new Set(expansion?.highDemandFarDistrictsHeuristic ?? []);
-  return {
-    points: districts.map((d) => ({
+  const points = districts.map((d) => {
+    const orderCount = asNumber(d.orderCount);
+    const distanceKm = asNumber(d.meanDistanceFromDepotKm);
+    const candidate = heuristic.has(d.district) || (orderCount >= medianY && distanceKm >= medianX);
+    return {
       district: d.district,
-      orderCount: asNumber(d.orderCount),
-      distanceKm: asNumber(d.meanDistanceFromDepotKm),
-      candidate:
-        heuristic.has(d.district) ||
-        (asNumber(d.orderCount) >= medianY &&
-          asNumber(d.meanDistanceFromDepotKm) >= medianX),
-    })),
-    medianX,
-    medianY,
-  };
+      districtShort: String(d.district ?? "").padStart(2, "0").slice(0, 2),
+      orderCount,
+      distanceKm,
+      candidate,
+    };
+  });
+  return { points, medianX, medianY };
+}
+
+export function buildTopExpansionAreas(expansion: ExpansionData | undefined) {
+  const districts = expansion?.districts ?? [];
+  const rows = districts.map((d) => {
+    const orderCount = asNumber(d.orderCount);
+    const distanceKm = asNumber(d.meanDistanceFromDepotKm);
+    // Simple, interpretable proxy: more demand * farther away.
+    const score = orderCount * distanceKm;
+    return {
+      district: String(d.district ?? "").padStart(2, "0").slice(0, 2),
+      orderCount,
+      distanceKm,
+      score,
+    };
+  });
+  rows.sort((a, b) => b.score - a.score);
+  return rows.slice(0, 10);
 }
 
 interface RouteKpiLike {
@@ -127,4 +168,13 @@ export function buildDriverRouteProfiles(route: RouteKpiLike) {
       nStops: Math.round(route.nStops * preset.load),
     };
   });
+}
+
+export function buildDemandTopDistricts(snapshot: AnalyticsSnapshot) {
+  const rows = snapshot.charts?.demandPatterns?.topDistricts ?? [];
+  return [...rows].sort((a, b) => b.orders - a.orders);
+}
+
+export function buildTimeSeries(snapshot: AnalyticsSnapshot) {
+  return snapshot.charts?.timeSeries?.daily ?? [];
 }

@@ -10,7 +10,7 @@ import { geocodePostalCode } from "@/lib/geo/geocoding";
 import { getAvailableSlots, type ScheduleKind } from "@/lib/scheduling/schedulingEngine";
 import type { ActionResult } from "./auth";
 import type { EditableOrderItem, ConfirmOrderInput, TimeSlot } from "@/types";
-import { ServiceType, OrderStatus, CollectionMethod, PickupMethod } from "@prisma/client";
+import { Prisma, ServiceType, OrderStatus, CollectionMethod, PickupMethod } from "@prisma/client";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 
@@ -29,6 +29,15 @@ const ADMIN_HIDDEN_ORDER_STATUSES: OrderStatus[] = [
   "DRAFT",
   "PHOTO_ANALYZED",
 ];
+
+function isOrderNumberConflict(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    Array.isArray(error.meta?.target) &&
+    error.meta.target.includes("orderNumber")
+  );
+}
 
 // ──────────────────────────────────────────
 // CREATE DRAFT ORDER
@@ -65,19 +74,35 @@ export async function createOrderAction(
     return { success: false, error: "Customer profile not found." };
   }
 
-  const orderNumber = await generateOrderNumber();
+  let order;
+  let orderNumber = "";
 
-  const order = await db.order.create({
-    data: {
-      orderNumber,
-      customerId: customerProfile.id,
-      serviceType: parsed.data.serviceType,
-      pickupMethod: parsed.data.pickupMethod,
-      specialNotes: parsed.data.specialNotes,
-      addressId: parsed.data.addressId,
-      status: "DRAFT",
-    },
-  });
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    orderNumber = await generateOrderNumber();
+
+    try {
+      order = await db.order.create({
+        data: {
+          orderNumber,
+          customerId: customerProfile.id,
+          serviceType: parsed.data.serviceType,
+          pickupMethod: parsed.data.pickupMethod,
+          specialNotes: parsed.data.specialNotes,
+          addressId: parsed.data.addressId,
+          status: "DRAFT",
+        },
+      });
+      break;
+    } catch (error) {
+      if (!isOrderNumberConflict(error) || attempt === 4) {
+        throw error;
+      }
+    }
+  }
+
+  if (!order) {
+    return { success: false, error: "Unable to create order right now. Please try again." };
+  }
 
   await logStatusChange({ orderId: order.id, status: "DRAFT", changedBy: user.id });
   await logOrderEvent({

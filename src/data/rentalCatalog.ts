@@ -2,10 +2,10 @@ import img001 from "./img/001_Valen Sash Tie Maxi Jumpsuit Black.jpg";
 import img002 from "./img/002_Kandy Mesh Peephole Jumpsuit.png";
 import img003 from "./img/003_Melinda V Neck Vest Top Grey.png";
 import img004 from "./img/004_Aria Tweed Vest Top Black.png";
-import img005 from "./img/005_Celeste Soft Denim Dress Dark Wash.jpg";
+import img005 from "./img/005_Celeste Soft Denim Dress Dark Wash.png";
 import img006 from "./img/006_Orient Cheongsam Jacquard Ribbon Top Yellow.png";
-import img007 from "./img/007_Althaea Peplum Top Cream.jpg";
-import img008 from "./img/008_Liyra Floral Soft Jacquard Dress Pink.jpg";
+import img007 from "./img/007_Althaea Peplum Top Cream.png";
+import img008 from "./img/008_Liyra Floral Soft Jacquard Dress Pink.png";
 import img009 from "./img/009_Cynthia Crepe Mini Dress Yellow.jpg";
 import img010 from "./img/010_Natasha Puff Sleeves Pleated Romper Forest.jpg";
 import img011 from "./img/011_Fania Halter Neck Midi Dress Black.jpg";
@@ -17,6 +17,15 @@ import img016 from "./img/016_Vivi Knit Dress.jpg"
 import img017 from "./img/017_Puff-Sleeve Blouse - Made With Liberty Fabric.jpg"
 import img018 from "./img/018_Daffodil Print Silk Blouse - Made With Liberty Fabric.jpg"
 import img019 from "./img/019_Hawaiian Cruise Lily Shirt.jpg"
+import img020 from "./img/020_Ruched High Neck Flowy Midi Dress in Flora Prints.jpg"
+import img021 from "./img/021_Ashlyn Embroidery Padded Dress Navy.jpg"
+import img022 from "./img/022_Carla Gingham Dress Black.jpg"
+import img023 from "./img/023_Davina Denim Flare Dress Light Blue.jpg"
+import img024 from "./img/024_Melody Ruched Floral Dress Cream.jpg"
+import img025 from "./img/025_Xue Flutter Sleeve Dress Dusk.jpg"
+import img026 from "./img/026_Bright Blue Regular Fit Textured Linen Blend Blazer.png"
+import img027 from "./img/027_Neutral Tailored Fit Linen Blend Texture Suit Jacket.png"
+import img028 from "./img/028_Navy Blue Regular Fit Signature Nova Fides Italian Wool Suit Jacket.png"
 
 export interface RentalItem {
   id: string;
@@ -34,7 +43,7 @@ export interface RentalItem {
 
 export const rentalCatalog: RentalItem[] = [
   {
-    id: "R-101",
+    id: "R-001",
     name: "Valen Sash Tie Maxi Jumpsuit Black",
     category: "Jumpsuit",
     size: "S-XL",
@@ -47,11 +56,11 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["S", "M", "L"],
   },
   {
-    id: "R-102",
+    id: "R-002",
     name: "Kandy Mesh Peephole Jumpsuit Blush",
     category: "Jumpsuit",
     size: "XS-XL",
-    price: 59.9,
+    price: 29.9,
     color: "Blush",
     occasion: "Work / Casual",
     description: "The Kandy Mesh Peephole Jumpsuit is crafted from high-quality polyester, offering a sleek and comfortable fit. Featuring adjustable spaghetti straps, front zip closure, and two functional side seam pockets. The standout feature is the mesh peephole design at the waist, adding a touch of flirtatious elegance.",
@@ -60,7 +69,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L"],
   },
   {
-    id: "R-103",
+    id: "R-003",
     name: "Melinda V Neck Vest Top Grey",
     category: "Top",
     size: "XS-XL",
@@ -73,7 +82,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-104",
+    id: "R-004",
     name: "Aria Tweed Vest Top Black",
     category: "Top",
     size: "XS-XL",
@@ -86,11 +95,11 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-105",
+    id: "R-005",
     name: "Celeste Soft Denim Dress Dark Wash",
     category: "Dress",
     size: "XS-XL",
-    price: 59.9,
+    price: 39.9,
     color: "Dark Blue",
     occasion: "Work / Casual",
     description: "Celeste Soft Denim Dress is a refined everyday piece crafted from lightweight polyester-blend soft denim with a smooth, soft-touch hand feel. Designed with a collared V-neckline and short sleeves, featuring front button closure and pleated detailing for a flattering fit.",
@@ -99,11 +108,11 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M"],
   },
   {
-    id: "R-106",
+    id: "R-006",
     name: "Orient Cheongsam Jacquard Ribbon Top Yellow",
     category: "Top",
     size: "S-XL",
-    price: 45.9,
+    price: 25.9,
     color: "Yellow",
     occasion: "Festive",
     description: "Add a touch of elegance to your wardrobe with the Cheongsam Jacquard Ribbon Top. Crafted from luxurious jacquard fabric with functional Mandarin button at collar. The beautiful overlap layering design with contrast piping detail creates a sophisticated silhouette.",
@@ -112,11 +121,11 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["S", "M", "L", "XL"],
   },
   {
-    id: "R-107",
+    id: "R-007",
     name: "Althaea Peplum Top Cream",
     category: "Top",
     size: "XS-XL",
-    price: 42.9,
+    price: 24.9,
     color: "Beige",
     occasion: "Work / Casual",
     description: "Althaea Peplum Top is a chic and structured top designed with feminine detailing. Made of polyester blend textured suit fabric with puffed sleeve and elasticated cuff. Features self-tie ribbon details at front and ruffle design at hem.",
@@ -125,11 +134,11 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-108",
+    id: "R-008",
     name: "Liyra Floral Soft Jacquard Dress Pink",
     category: "Dress",
     size: "XS-XL",
-    price: 59.9,
+    price: 39.9,
     color: "Blush",
     occasion: "Work / Casual",
     description: "The Liyra Floral Soft Jacquard Dress is a graceful and feminine piece, crafted from soft-touch floral jacquard fabric. Designed with a sleeveless silhouette and adjustable straps. Fully lined with functional pockets and peplum flare hem.",
@@ -138,11 +147,11 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-109",
+    id: "R-009",
     name: "Cynthia Crepe Mini Dress Yellow",
     category: "Dress",
     size: "XS-XL",
-    price: 52.9,
+    price: 22.9,
     color: "Yellow",
     occasion: "Casual",
     description: "Introducing the Cynthia Crepe Mini Dress, a dreamy chiffon mini designed to blend femininity with comfort. Featuring a soft square neckline and adjustable shoulder straps with decorative ribbons. Crafted from mid-weight, non-stretch triple crepe.",
@@ -151,11 +160,11 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-110",
+    id: "R-010",
     name: "Natasha Puff Sleeves Pleated Romper Forest",
     category: "Romper",
     size: "XS-XL",
-    price: 45,
+    price: 35,
     color: "Forest",
     occasion: "Work / Casual",
     description: "Sweet and simple everyday romper for days you don't know what to wear. Fully lined with sweetheart neckline and pleated bust area. Features elasticated shoulder area, puff sleeves, and functional side pockets.",
@@ -164,7 +173,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-111",
+    id: "R-011",
     name: "Fania Halter Neck Midi Dress Black",
     category: "Dress",
     size: "XS-XL",
@@ -177,7 +186,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-112",
+    id: "R-012",
     name: "Slim-Fit Tuxedo Jacket",
     category: "Suit",
     size: "S-XL",
@@ -190,7 +199,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["S", "M", "L", "XL"],
   },
   {
-    id: "R-113",
+    id: "R-013",
     name: "Cowl Neck Oblique-layered Silk Dress",
     category: "Dress",
     size: "XS-XL",
@@ -203,7 +212,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-114",
+    id: "R-014",
     name: "Pleated Sleeveless Midi Silk Dress",
     category: "Dress",
     size: "XS-XL",
@@ -216,7 +225,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-115",
+    id: "R-015",
     name: "Amalfi Stripe Silk Shirtdress with Belt",
     category: "Dress",
     size: "M-XL",
@@ -229,7 +238,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L", "XL"],
   },
   {
-    id: "R-116",
+    id: "R-016",
     name: "Vivi Knit Dress",
     category: "Dress",
     size: "M-XL",
@@ -242,7 +251,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L", "XL"],
   },
   {
-    id: "R-117",
+    id: "R-017",
     name: "Puff-Sleeve Blouse - Made With Liberty Fabric",
     category: "Top",
     size: "M-L",
@@ -255,7 +264,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L"],
   },
   {
-    id: "R-118",
+    id: "R-018",
     name: "Daffodil Print Silk Blouse - Made With Liberty Fabric",
     category: "Top",
     size: "M-XL",
@@ -268,7 +277,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L","XL"],
   },
   {
-    id: "R-119",
+    id: "R-019",
     name: "Hawaiian Cruise Lily Shirt",
     category: "Top",
     size: "M-XL",
@@ -279,5 +288,122 @@ export const rentalCatalog: RentalItem[] = [
     brand: "LilySilk",
     image: img019.src,
     sizes: [ "M", "L","XL"],
+  },
+  {
+    id: "R-020",
+    name: "Ruched High Neck Flowy Midi Dress in Flora Prints",
+    category: "Dress",
+    size: "M-XL",
+    price: 30,
+    color: "Beige",
+    occasion: "Casual",
+    description: "Floral print Midi Dress",
+    brand: "ACW",
+    image: img020.src,
+    sizes: [ "M", "L","XL"],
+  },
+  {
+    id: "R-021",
+    name: "Ashlyn Embroidery Padded Dress Navy",
+    category: "Dress",
+    size: "S-L",
+    price: 30,
+    color: "Navy",
+    occasion: "Casual",
+    description: "Made of linen, fully lined with no stretch except for a partially smocked back. Features functional side pockets, a concealed side zip, adjustable shoulder straps, and removable padding.",
+    brand: "The Willow Label",
+    image: img021.src,
+    sizes: [ "S","M", "L"],
+  },
+  {
+    id: "R-022",
+    name: "Carla Gingham Dress Black",
+    category: "Dress",
+    size: "S-L",
+    price: 30,
+    color: "Black",
+    occasion: "Casual",
+    description: "Made of cotton polyester, lined with minimal stretch from elastic band at waist. Comes with concealed back zip.",
+    brand: "The Willow Label",
+    image: img022.src,
+    sizes: [ "S","M", "L"],
+  },
+  {
+    id: "R-023",
+    name: "Davina Denim Flare Dress Light Blue",
+    category: "Dress",
+    size: "S-L",
+    price: 35,
+    color: "Blue",
+    occasion: "Casual",
+    description: "Made of denim, lined and unstretchable except partial smoked back. Comes with functional side pockets and concealed side zip. ",
+    brand: "The Willow Label",
+    image: img023.src,
+    sizes: [ "S","M", "L"],
+  },
+  {
+    id: "R-024",
+    name: "Melody Ruched Floral Dress Cream",
+    category: "Dress",
+    size: "S-L",
+    price: 39,
+    color: "Beige",
+    occasion: "Casual",
+    description: "Made of crepe chiffon.",
+    brand: "The Willow Label",
+    image: img024.src,
+    sizes: [ "S","M", "L"],
+  },
+  {
+    id: "R-025",
+    name: "Xue Flutter Sleeve Dress Dusk",
+    category: "Dress",
+    size: "S-L",
+    price: 39,
+    color: "Dusk",
+    occasion: "Work / Casual",
+    description: "Made of textured crepe cotton polyester, lined with no stretch. Comes with functional side pockets, a concealed back zip and functional button closure at neckline.",
+    brand: "The Willow Label",
+    image: img025.src,
+    sizes: [ "S","M", "L"],
+  },
+  {
+    id: "R-026",
+    name: "Bright Blue Regular Fit Textured Linen Blend Blazer",
+    category: "Suit",
+    size: "S-L",
+    price: 80,
+    color: "Blue",
+    occasion: "Work",
+    description: "Make a sophisticated statement at your next summer event with this premium linen-rich blazer. Crafted in a smart two-toned hopsack texture, it features a buggy lining for enhanced movement and breathability. Refined details like a pull-out pocket square and printed under-collar accents ensure a polished look for any special occasion.",
+    brand: "Next",
+    image: img026.src,
+    sizes: [ "S","M", "L"],
+  },
+  {
+    id: "R-027",
+    name: "Neutral Tailored Fit Linen Blend Texture Suit Jacket",
+    category: "Suit",
+    size: "S-L",
+    price: 80,
+    color: "Beige",
+    occasion: "Work",
+    description: "Stay effortlessly smart and cool in this refined Cotton/Linen Blend Neutral Blazer. Perfect for warmer months, it features a classic notch lapel and a luxurious jacquard lining.",
+    brand: "Next",
+    image: img027.src,
+    sizes: [ "S","M", "L"],
+  },
+  {
+    id: "R-028",
+    name: "Navy Blue Regular Fit Signature Nova Fides Italian Wool Suit Jacket",
+    category: "Suit",
+    size: "S-L",
+    price: 80,
+    color: "Charcoal Grey",
+    occasion: "Work",
+    description: "As part of our Signature range, this premium charcoal grey jacket is made with wool from the Italian Nova Fides mill, cut to a regular fit with a lapel collar, a single-breasted front and a button-up fastening. The jacket is finished with a comfortable lining, flap pockets and a pull-out chest pocket.",
+    brand: "Next",
+    image: img028.src,
+    sizes: [ "S","M", "L"],
   },
 ];
