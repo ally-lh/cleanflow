@@ -13,7 +13,15 @@ const OCCASION_KEYWORDS: Record<string, string[]> = {
   dinner: ["dinner", "evening", "formal", "gala", "party", "date", "night", "wedding"],
 };
 
-// HELPER FUNCTIONS
+const CATEGORY_KEYWORDS: Record<string, string[]> = {
+  dress: ["dress", "gown", "dresses"],
+  jumpsuit: ["jumpsuit"],
+  romper: ["romper"],
+  top: ["top", "tops", "vest", "blouse", "shirt"],
+  suit: ["suit", "suits", "blazer"],
+  jacket: ["jacket", "coat"],
+};
+
 function extractBudget(query: string): number | null {
   const patterns = [
     /\$?\s*(\d+)\s*(?:sgd|sg|euro|eur|dollar|usd)?/gi,
@@ -30,6 +38,14 @@ function keywordSearch(query: string, budget: number | null) {
   const q = query.toLowerCase();
   const queryWords = q.split(/\s+/).filter(w => w.length > 1);
   const scores: { id: string; imageFilename: string; score: number }[] = [];
+  
+  let extractedCategory: string | null = null;
+  for (const [cat, keywords] of Object.entries(CATEGORY_KEYWORDS)) {
+    if (keywords.some(kw => q.includes(kw))) {
+      extractedCategory = cat;
+      break;
+    }
+  }
 
   for (const item of rentalCatalog) {
     let score = 0;
@@ -38,15 +54,53 @@ function keywordSearch(query: string, budget: number | null) {
     const occasion = item.occasion.toLowerCase();
     const color = item.color.toLowerCase();
     const description = item.description.toLowerCase();
-
-    if (category.includes(q)) score += 5;
-    if (color.includes(q)) score += 3;
+    const brand = item.brand.toLowerCase();
+    
+    if (extractedCategory && category === extractedCategory) {
+      score += 10;
+    } else if (extractedCategory && category.includes(q)) {
+      score += 5;
+    } else if (!extractedCategory && category.includes(q)) {
+      score += 5;
+    }
     
     const occasionMatch = Object.entries(OCCASION_KEYWORDS).find(([_, kws]) =>
       kws.some(kw => q.includes(kw))
     );
-    if (occasionMatch && occasion.includes(occasionMatch[0])) score += 4;
-    if (budget && item.price <= budget) score += 10;
+    if (occasionMatch && occasion.includes(occasionMatch[0])) {
+      score += 8;
+    } else if (occasionMatch && !occasion.includes(occasionMatch[0])) {
+      score -= 5;
+    }
+
+    if (color.includes(q) || q.split(/\s+/).some(w => w.length >= 3 && color.includes(w))) score += 5;
+
+    // const clothingTypes = ["dress", "jumpsuit", "romper", "top", "suit", "vest", "jacket"];
+    // for (const type of clothingTypes) {
+      // if (q.includes(type) && (name.includes(type) || category.includes(type))) {
+      //   score += 6;
+      //   break;
+      // }
+    // }
+
+    if (brand.includes(q)) score += 2;
+
+    if (q.includes("cheap") || q.includes("budget") || q.includes("affordable") || q.includes("under") || q.includes("$") || /\d+\s*(?:sgd|sg)/i.test(q)) {
+      if (budget && item.price <= budget) {
+        score += 10;
+      } else if (item.price < 50) {
+        score += 3;
+      }
+    }
+
+    if (q.includes("expensive") || q.includes("luxury") || q.includes("elegant") || q.includes("premium")) {
+      if (item.price >= 80) score += 4;
+      if (item.category === "Dress" || item.category === "Suit") score += 3;
+    }
+
+    if (q.includes("formal") || q.includes("gala") || q.includes("wedding")) {
+      if (item.category === "Dress" || item.category === "Suit") score += 3;
+    }
 
     for (const word of queryWords) {
       if (description.includes(word)) score += 1;
@@ -93,6 +147,20 @@ export async function POST(request: Request) {
       } catch (e) {
         console.log("Stylist Backend (8005) unreachable, falling back to catalog...");
       }
+    const fashionKeywords = [
+      "wear", "clothing", "dress", "outfit", "fit", "shirt", "style", "fashion", "jumpsuit",
+      "romper", "top", "suit", "color", "casual", "formal", "party", "wedding",
+      "work", "office", "evening", "elegant", "cheap", "budget", "black", "white",
+      "blue", "green", "yellow", "red", "pink", "beige", "grey", "luxury",
+      "expensive", "premium", "affordable", "chic", "vintage", "modern", "flowy", "fitted"
+    ];
+
+    if (!fashionKeywords.some(kw => userMessage.includes(kw))) {
+      return NextResponse.json({
+        response: "I'm a fashion style assistant for rental clothing. Tell me about what you're looking for - the event, style, colors, or budget!",
+        suggestItems: false,
+        items: []
+      });
     }
 
     // --- STEP B: CATALOG LOGIC (CLIP + KEYWORDS) ---
@@ -137,10 +205,34 @@ export async function POST(request: Request) {
     });
 
     combined.sort((a, b) => b.finalPercent - a.finalPercent);
-    const topItems = combined.slice(0, 5).map(result => {
+    
+    const filteredCombined = combined.filter(item => 
+      item.keywordPercent > 0 || item.clipPercent > 0
+    );
+    
+    const topItems = filteredCombined.slice(0, 5);
+
+    const responseItems = topItems.map(result => {
       const item = rentalCatalog.find(i => i.id === result.id);
       return item ? { ...item, ...result } : null;
     }).filter(Boolean);
+
+    if (responseItems.length === 0) {
+      return NextResponse.json({
+        response: "I couldn't find any items matching your description. Try describing the occasion, style, colors, or budget!",
+        suggestItems: false,
+        items: []
+      });
+    }
+
+    const topItem = responseItems[0];
+    let response = `I found top ${responseItems.length} items for you!`;
+    
+    if (budget) {
+      response += ` Showing items within SGD ${budget}.`;
+    }
+    
+    response += ` Top pick: ${topItem?.name} - ${topItem?.category?.toLowerCase()} for ${topItem?.occasion?.toLowerCase()}.`;
 
     return NextResponse.json({
       response: `I found some matches for you! Top pick: ${topItems[0]?.name || 'curated selection'}.`,

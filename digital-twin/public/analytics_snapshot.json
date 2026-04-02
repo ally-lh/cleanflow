@@ -1,0 +1,136 @@
+{
+  "generatedAt": "2026-03-29T08:00:00.000Z",
+  "source": "seed-data",
+  "sourceOrderCount": 237,
+  "geo": {
+    "clustering": {
+      "ok": true,
+      "k": 5,
+      "clusterSizes": { "0": 62, "1": 48, "2": 45, "3": 42, "4": 40 },
+      "centroids": [
+        { "lat": 1.3290, "lng": 103.8560 },
+        { "lat": 1.3120, "lng": 103.7700 },
+        { "lat": 1.3520, "lng": 103.9450 },
+        { "lat": 1.3610, "lng": 103.8490 },
+        { "lat": 1.3060, "lng": 103.8520 }
+      ]
+    },
+    "densityByDistrict": {
+      "ok": true,
+      "byDistrictPrefix": {
+        "33": 60,
+        "21": 37,
+        "38": 35,
+        "20": 24,
+        "36": 15,
+        "19": 15,
+        "52": 10,
+        "35": 8,
+        "57": 7,
+        "12": 6,
+        "73": 6,
+        "64": 6,
+        "65": 5,
+        "76": 4,
+        "82": 2,
+        "56": 1,
+        "46": 1
+      }
+    },
+    "routeOptimization": {
+      "ok": true,
+      "depot": { "lat": 1.3048, "lng": 103.8318 },
+      "nStops": 237,
+      "baselineKm": 235.4,
+      "optimizedKm": 125.9,
+      "savingsKm": 109.5,
+      "savingsPercent": 46.5,
+      "roadFactor": 1.4,
+      "twoOptApplied": true
+    }
+  },
+  "business": {
+    "ok": true,
+    "revenueByServiceType": {
+      "WASH_AND_FOLD": { "sum": 4250.00, "count": 168, "mean": 25.30 },
+      "DRY_CLEANING": { "sum": 2890.50, "count": 69, "mean": 41.89 }
+    },
+    "turnaroundHours": {
+      "median": 38.5,
+      "mean": 42.1,
+      "p90": 68.0,
+      "sampleSize": 195
+    },
+    "pickupMethodCounts": {
+      "SCHEDULED_PICKUP": 178,
+      "CUSTOMER_DROPOFF": 59
+    },
+    "collectionMethodCounts": {
+      "DELIVERY": 145,
+      "SELF_COLLECTION": 92
+    }
+  },
+  "expansion": {
+    "ok": true,
+    "depot": { "lat": 1.3048, "lng": 103.8318 },
+    "districts": [
+      { "district": "33", "orderCount": 60, "meanDistanceFromDepotKm": 3.88 },
+      { "district": "21", "orderCount": 37, "meanDistanceFromDepotKm": 3.69 },
+      { "district": "38", "orderCount": 35, "meanDistanceFromDepotKm": 4.80 },
+      { "district": "20", "orderCount": 24, "meanDistanceFromDepotKm": 3.57 },
+      { "district": "36", "orderCount": 15, "meanDistanceFromDepotKm": 5.14 },
+      { "district": "19", "orderCount": 15, "meanDistanceFromDepotKm": 3.31 },
+      { "district": "52", "orderCount": 10, "meanDistanceFromDepotKm": 13.44 },
+      { "district": "35", "orderCount": 8, "meanDistanceFromDepotKm": 5.16 },
+      { "district": "57", "orderCount": 7, "meanDistanceFromDepotKm": 5.44 },
+      { "district": "73", "orderCount": 6, "meanDistanceFromDepotKm": 15.56 },
+      { "district": "64", "orderCount": 6, "meanDistanceFromDepotKm": 14.58 },
+      { "district": "65", "orderCount": 5, "meanDistanceFromDepotKm": 10.46 },
+      { "district": "12", "orderCount": 4, "meanDistanceFromDepotKm": 7.47 },
+      { "district": "76", "orderCount": 4, "meanDistanceFromDepotKm": 13.87 },
+      { "district": "82", "orderCount": 2, "meanDistanceFromDepotKm": 13.51 }
+    ],
+    "highDemandFarDistrictsHeuristic": ["52", "73", "64"]
+  },
+  "charts": {
+    "kpis": {
+      "totalOrders": 237,
+      "totalRevenue": 7140.50,
+      "avgOrderValue": 30.13,
+      "totalDistanceSavedKm": 109.5,
+      "avgSavingsRatePercent": 46.5
+    },
+    "operationalEfficiency": {
+      "drivers": [
+        { "driverId": "driver-1", "driverLabel": "Ahmad", "baselineKm": 78.5, "optimizedKm": 42.1, "savingsKm": 36.4, "savingsPercent": 46.4, "stops": 82 },
+        { "driverId": "driver-2", "driverLabel": "Wei Ming", "baselineKm": 82.3, "optimizedKm": 43.9, "savingsKm": 38.4, "savingsPercent": 46.7, "stops": 88 },
+        { "driverId": "driver-3", "driverLabel": "Raj", "baselineKm": 74.6, "optimizedKm": 39.9, "savingsKm": 34.7, "savingsPercent": 46.5, "stops": 67 }
+      ]
+    },
+    "demandPatterns": {
+      "topDistricts": [
+        { "district": "33", "orders": 60 },
+        { "district": "21", "orders": 37 },
+        { "district": "38", "orders": 35 },
+        { "district": "20", "orders": 24 },
+        { "district": "36", "orders": 15 },
+        { "district": "19", "orders": 15 },
+        { "district": "52", "orders": 10 },
+        { "district": "35", "orders": 8 },
+        { "district": "57", "orders": 7 },
+        { "district": "73", "orders": 6 }
+      ]
+    },
+    "timeSeries": {
+      "daily": [
+        { "date": "2026-03-22", "orders": 31 },
+        { "date": "2026-03-23", "orders": 28 },
+        { "date": "2026-03-24", "orders": 35 },
+        { "date": "2026-03-25", "orders": 42 },
+        { "date": "2026-03-26", "orders": 38 },
+        { "date": "2026-03-27", "orders": 33 },
+        { "date": "2026-03-28", "orders": 30 }
+      ]
+    }
+  }
+}

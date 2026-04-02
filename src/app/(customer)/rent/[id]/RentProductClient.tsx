@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -22,9 +22,24 @@ interface Props {
 
 const CART_KEY = "cleanflow_cart";
 
+type SimilarItem = {
+  id: string;
+  name: string;
+  image: string;
+  category: string;
+  price: number;
+  color: string;
+  occasion: string;
+  keywordPercent: number;
+  clipPercent: number;
+  finalPercent: number;
+};
+
 export default function RentProductClient({ item }: Props) {
   const [selectedSize, setSelectedSize] = useState<string>("");
   const [added, setAdded] = useState(false);
+  const [similarItems, setSimilarItems] = useState<SimilarItem[]>([]);
+  const [loadingSimilar, setLoadingSimilar] = useState(false);
   const [tryOnOpen, setTryOnOpen] = useState(false);
   const [tryOnMode, setTryOnMode] = useState<"upload" | "camera" | null>(null);
   const [tryOnStep, setTryOnStep] = useState<"select" | "preview" | "loading" | "result">("select");
@@ -63,6 +78,58 @@ export default function RentProductClient({ item }: Props) {
     setTimeout(() => setAdded(false), 2000);
   };
 
+  useEffect(() => {
+    async function fetchSimilarItems() {
+      setLoadingSimilar(true);
+      try {
+        const query = `${item.color} ${item.category} ${item.occasion}`;
+        const response = await fetch("/api/rent-chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: query }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          if (data.items && Array.isArray(data.items)) {
+            const filtered = data.items
+              .filter((i: { id: string }) => i.id !== item.id)
+              .slice(0, 3)
+              .map((i: { 
+                id: string; 
+                name: string; 
+                image: string; 
+                category: string; 
+                price: number; 
+                color: string; 
+                occasion: string;
+                keywordPercent: number;
+                clipPercent: number;
+                finalPercent: number;
+              }) => ({
+                id: i.id,
+                name: i.name,
+                image: i.image,
+                category: i.category,
+                price: i.price,
+                color: i.color,
+                occasion: i.occasion,
+                keywordPercent: i.keywordPercent || 0,
+                clipPercent: i.clipPercent || 0,
+                finalPercent: i.finalPercent || 0,
+              }));
+            setSimilarItems(filtered);
+          }
+        }
+      } catch (error) {
+        console.error("Error fetching similar items:", error);
+      } finally {
+        setLoadingSimilar(false);
+      }
+    }
+
+    fetchSimilarItems();
+  }, [item]);
   const openTryOn = () => {
     setTryOnOpen(true);
     setTryOnMode(null);
@@ -186,6 +253,47 @@ export default function RentProductClient({ item }: Props) {
         </div>
       </div>
 
+      {(similarItems.length > 0 || loadingSimilar) && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center gap-2 mb-4">
+              <Sparkles className="h-5 w-5 text-primary" />
+              <h2 className="text-lg font-semibold">You May Also Like</h2>
+            </div>
+            
+            {loadingSimilar ? (
+              <p className="text-sm text-muted-foreground">Finding similar items...</p>
+            ) : (
+              <div className="grid grid-cols-3 gap-4">
+                {similarItems.map((simItem) => (
+                  <Link
+                    key={simItem.id}
+                    href={`/rent/${simItem.id}`}
+                    className="block"
+                  >
+                    <Card className="overflow-hidden hover:shadow-md transition-shadow cursor-pointer pt-0">
+                      <div className="w-full h-80">
+                        <img
+                          src={simItem.image}
+                          alt={simItem.name}
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                      <CardContent className="p-2 space-y-1">
+                        <p className="text-xs font-medium line-clamp-1">{simItem.name}</p>
+                        <p className="text-xs text-primary font-semibold">SGD {simItem.price}</p>
+                        <Badge variant="outline" className="text-[10px] px-1 py-0">
+                          {simItem.category}
+                        </Badge>
+                      </CardContent>
+                    </Card>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
       <Dialog open={tryOnOpen} onOpenChange={closeTryOn}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>

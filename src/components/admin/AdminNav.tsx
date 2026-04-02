@@ -12,11 +12,15 @@ interface Props {
   user: { name?: string | null; email?: string | null; role?: string | null };
 }
 
+const DIGITAL_TWIN_URL =
+  process.env.NEXT_PUBLIC_DIGITAL_TWIN_URL || "http://localhost:5173";
+
 const navLinks = [
   { href: "/admin/dashboard", label: "Dashboard" },
   { href: "/admin/orders", label: "Orders" },
   { href: "/admin/schedule", label: "Schedule" },
   { href: "/admin/analytics", label: "Analytics" },
+  { href: DIGITAL_TWIN_URL, label: "Delivery Tracker", external: true },
 ];
 
 export default function AdminNav({ user }: Props) {
@@ -35,11 +39,12 @@ export default function AdminNav({ user }: Props) {
       <nav className="flex-1 px-3 py-4 space-y-1">
         {navLinks.map((link) => (
           <Link
-            key={link.href}
+            key={link.label}
             href={link.href}
             className={cn(
               "flex items-center px-3 py-2 rounded-lg text-sm transition-colors",
-              pathname === link.href || pathname.startsWith(link.href + "/")
+              !link.external &&
+                (pathname === link.href || pathname.startsWith(link.href + "/"))
                 ? "bg-blue-600 text-white"
                 : "text-gray-300 hover:bg-gray-800 hover:text-white"
             )}

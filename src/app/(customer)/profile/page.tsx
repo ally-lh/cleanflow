@@ -110,16 +110,8 @@ export default function ProfilePage() {
               <div className="space-y-4 text-sm text-muted-foreground">
                 <div>
                   <strong className="text-foreground">Earn Points:</strong> You earn 1 point for every dollar spent on orders. 
-                  Bonus points are awarded for leaving reviews and referring friends.
+                  Bonus points are awarded for referring friends.
                 </div>
-                <div>
-                  <strong className="text-foreground">Point Tiers:</strong>
-                </div>
-                <ul className="list-disc list-inside space-y-2 ml-2">
-                  <li>Bronze (0-500 pts): 1% discount on orders</li>
-                  <li>Silver (500-1500 pts): 2% discount + free delivery</li>
-                  <li>Gold (1500+ pts): 3% discount + priority pickup scheduling</li>
-                </ul>
                 <div>
                   <strong className="text-foreground">Redemption:</strong> Points are automatically applied to your eligible orders 
                   at checkout. They never expire as long as you maintain an active account.
