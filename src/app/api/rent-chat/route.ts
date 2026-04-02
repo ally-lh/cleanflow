@@ -329,8 +329,8 @@ export async function POST(request: Request) {
     response += ` Top pick: ${topItem?.name} - ${topItem?.category?.toLowerCase()} for ${topItem?.occasion?.toLowerCase()}.`;
 
     return NextResponse.json({
-      response: `I found some matches for you! Top pick: ${topItems[0]?.name || "curated selection"}.`,
-      items: topItems,
+      response: `I found some matches for you! Top pick: ${topItem?.name || "curated selection"}.`,
+      items: responseItems,
       queryType: "Catalog Search",
       clipServerWorking,
     });
