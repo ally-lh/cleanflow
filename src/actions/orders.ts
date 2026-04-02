@@ -556,7 +556,7 @@ export async function payInvoiceAction(
     };
   }
 
-  if (order.invoice.paidAt || order.invoice.status === "PAID") {
+  if (order.invoice.paidAt) {
     return { success: false, error: "This invoice has already been paid." };
   }
 
