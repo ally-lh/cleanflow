@@ -1,8 +1,11 @@
 import { NextResponse } from "next/server";
 import { rentalCatalog } from "@/data/rentalCatalog";
 
-const PYTHON_API_URL = process.env.PYTHON_RENTAL_API_URL || "http://127.0.0.1:8003";
+// CONFIGURATION
+const STYLIST_API_URL = "http://127.0.0.1:8005"; // Local SmolLM2 Port
+const CATALOG_API_URL = "http://127.0.0.1:8003"; // CLIP/Catalog Port
 
+// HELPER DATA
 const OCCASION_KEYWORDS: Record<string, string[]> = {
   work: ["work", "office", "business", "professional"],
   casual: ["casual", "relaxed", "everyday", "day", "brunch", "lunch"],
@@ -23,19 +26,10 @@ function extractBudget(query: string): number | null {
   const patterns = [
     /\$?\s*(\d+)\s*(?:sgd|sg|euro|eur|dollar|usd)?/gi,
     /(?:under|budget|less\s*than|below|not\s*more\s*than)\s*\$?\s*(\d+)/gi,
-    /(\d+)\s*(?:sgd|sg|euro|eur|dollar|usd)/gi,
   ];
-  
   for (const pattern of patterns) {
-    const matches = query.match(pattern);
-    if (matches) {
-      for (const match of matches) {
-        const numMatch = match.match(/(\d+)/);
-        if (numMatch) {
-          return parseInt(numMatch[1], 10);
-        }
-      }
-    }
+    const match = pattern.exec(query);
+    if (match) return parseInt(match[1], 10);
   }
   return null;
 }
@@ -115,16 +109,44 @@ function keywordSearch(query: string, budget: number | null) {
     const imageFilename = item.image.split('/').pop() || '';
     scores.push({ id: item.id, imageFilename, score });
   }
-
   return scores.sort((a, b) => b.score - a.score);
 }
 
+// MAIN HANDLER
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { message } = body as { message: string; history?: unknown[] };
+    const { message } = body;
     const userMessage = message.toLowerCase().trim();
 
+    // --- STEP A: REFINED ROUTER LOGIC (The Gatekeeper) ---
+    
+    // 1. Check for specific "Advice" keywords
+    const wantsAdvice = ["pair", "with", "style", "goes", "advice", "suggest", "wear"].some(kw => userMessage.includes(kw));
+
+    // 2. Check for "Shopping" keywords
+    const isShopping = ["rent", "show", "catalog", "find", "buy", "available", "stock"].some(kw => userMessage.includes(kw));
+
+    // 3. LOGIC: If they want advice OR aren't explicitly shopping, use SmolLM2
+    if (wantsAdvice || !isShopping) {
+      try {
+        const stylistResponse = await fetch(`${STYLIST_API_URL}/api/v1/style-chat`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ message: message }), 
+        });
+        
+        if (stylistResponse.ok) {
+          const aiData = await stylistResponse.json();
+          return NextResponse.json({
+            response: aiData.response,
+            items: [], 
+            queryType: "SmolLM2 Local Stylist"
+          });
+        }
+      } catch (e) {
+        console.log("Stylist Backend (8005) unreachable, falling back to catalog...");
+      }
     const fashionKeywords = [
       "wear", "clothing", "dress", "outfit", "fit", "shirt", "style", "fashion", "jumpsuit",
       "romper", "top", "suit", "color", "casual", "formal", "party", "wedding",
@@ -141,69 +163,44 @@ export async function POST(request: Request) {
       });
     }
 
+    // --- STEP B: CATALOG LOGIC (CLIP + KEYWORDS) ---
     const budget = extractBudget(userMessage);
-
     const keywordScores = keywordSearch(userMessage, budget);
 
     let clipScoresByFilename: Record<string, number> = {};
     let clipServerWorking = false;
     
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-      const clipResponse = await fetch(`${PYTHON_API_URL}/chat`, {
+      const clipResponse = await fetch(`${CATALOG_API_URL}/chat`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message, catalog: "rental" }),
-        signal: controller.signal
+        body: JSON.stringify({ message: message }),
       });
-
-      clearTimeout(timeoutId);
 
       if (clipResponse.ok) {
         const clipData = await clipResponse.json();
-        
-        if (clipData.items && Array.isArray(clipData.items)) {
+        if (clipData.items) {
           clipServerWorking = true;
-          
-          for (const item of clipData.items) {
-            const clipPercent = item.clip_percent || item.similarity || 0;
+          clipData.items.forEach((item: any) => {
             const filename = item.image || item.image_path || '';
-            
-            clipScoresByFilename[filename] = clipPercent / 100;
-            
-            if (item.id) {
-              const matchingItem = rentalCatalog.find(ri => ri.id === item.id);
-              if (matchingItem) {
-                const catalogFilename = matchingItem.image.split('/').pop() || matchingItem.image;
-                clipScoresByFilename[catalogFilename] = clipPercent / 100;
-              }
-            }
-          }
+            clipScoresByFilename[filename] = (item.clip_percent || item.similarity || 0) / 100;
+          });
         }
       }
     } catch (error) {
-      console.log("CLIP API not available:", error);
+      console.log("CLIP Server on 8003 unreachable");
     }
 
     const combined = keywordScores.map(kw => {
       const clipScore = clipScoresByFilename[kw.imageFilename] || 0;
-      
       const normalizedKeyword = Math.min(kw.score / 15, 1);
-      const keywordPercent = normalizedKeyword * 100;
-      
-      const finalScore = normalizedKeyword + clipScore;
-      const finalPercent = Math.min(finalScore * 50, 100);
+      const finalScore = (0.5 * normalizedKeyword) + (0.5 * clipScore);
       
       return {
         id: kw.id,
-        imageFilename: kw.imageFilename,
-        keywordScore: kw.score,
-        keywordPercent: Math.round(keywordPercent),
-        clipScore,
+        keywordPercent: Math.round(normalizedKeyword * 100),
         clipPercent: Math.round(clipScore * 100),
-        finalPercent: Math.round(finalPercent),
+        finalPercent: Math.round(finalScore * 100),
       };
     });
 
@@ -217,21 +214,7 @@ export async function POST(request: Request) {
 
     const responseItems = topItems.map(result => {
       const item = rentalCatalog.find(i => i.id === result.id);
-      if (!item) return null;
-      return {
-        id: item.id,
-        name: item.name,
-        image: item.image,
-        category: item.category,
-        price: item.price,
-        color: item.color,
-        occasion: item.occasion,
-        brand: item.brand,
-        description: item.description,
-        keywordPercent: result.keywordPercent,
-        clipPercent: result.clipPercent,
-        finalPercent: result.finalPercent,
-      };
+      return item ? { ...item, ...result } : null;
     }).filter(Boolean);
 
     if (responseItems.length === 0) {
@@ -252,19 +235,14 @@ export async function POST(request: Request) {
     response += ` Top pick: ${topItem?.name} - ${topItem?.category?.toLowerCase()} for ${topItem?.occasion?.toLowerCase()}.`;
 
     return NextResponse.json({
-      response,
-      suggestItems: true,
-      items: responseItems,
-      budgetUsed: budget,
+      response: `I found some matches for you! Top pick: ${topItems[0]?.name || 'curated selection'}.`,
+      items: topItems,
+      queryType: "Catalog Search",
       clipServerWorking
     });
 
   } catch (error) {
     console.error("Chat error:", error);
-    return NextResponse.json({
-      response: "Sorry, I encountered an error. Please try again.",
-      suggestItems: false,
-      items: []
-    }, { status: 500 });
+    return NextResponse.json({ response: "Internal error", items: [] }, { status: 500 });
   }
 }
