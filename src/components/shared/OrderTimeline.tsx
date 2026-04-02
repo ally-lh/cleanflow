@@ -24,24 +24,19 @@ export default function OrderTimeline({ currentStatus, history }: Props) {
   return (
     <div className="bg-white rounded-xl border p-5">
       <h3 className="text-sm font-semibold text-gray-700 mb-4">Order Progress</h3>
-      <div className="flex items-start gap-0">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:gap-0">
         {ORDER_STATUS_STEPS.map((step, index) => {
           const isDone = currentStep > index;
           const isCurrent = currentStep === index;
           const histEntry = history.find((h) => h.status === step);
+          const isLastStep = index === ORDER_STATUS_STEPS.length - 1;
 
           return (
-            <div key={step} className="flex-1 flex flex-col items-center">
-              {/* Dot + connector */}
-              <div className="flex items-center w-full">
-                {index > 0 && (
-                  <div
-                    className={cn(
-                      "h-0.5 flex-1 transition-colors",
-                      isDone || isCurrent ? "bg-blue-500" : "bg-gray-200"
-                    )}
-                  />
-                )}
+            <div
+              key={step}
+              className="flex items-start gap-3 sm:flex-1 sm:flex-col sm:items-center sm:gap-0"
+            >
+              <div className="flex flex-col items-center sm:w-full sm:flex-row sm:items-center">
                 <div
                   className={cn(
                     "w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold shrink-0 transition-all",
@@ -54,18 +49,17 @@ export default function OrderTimeline({ currentStatus, history }: Props) {
                 >
                   {isDone ? "✓" : index + 1}
                 </div>
-                {index < ORDER_STATUS_STEPS.length - 1 && (
+                {!isLastStep && (
                   <div
                     className={cn(
-                      "h-0.5 flex-1 transition-colors",
+                      "mt-2 h-8 w-0.5 transition-colors sm:mt-0 sm:h-0.5 sm:flex-1 sm:w-auto",
                       isDone ? "bg-blue-500" : "bg-gray-200"
                     )}
                   />
                 )}
               </div>
 
-              {/* Label */}
-              <div className="mt-2 text-center px-1">
+              <div className="min-w-0 flex-1 pt-0.5 sm:mt-2 sm:w-full sm:px-1 sm:pt-0 sm:text-center">
                 <p
                   className={cn(
                     "text-xs leading-tight",

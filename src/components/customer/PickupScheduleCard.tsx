@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { requestPickupAction } from "@/actions/orders";
+import { getAvailableTimeSlotsAction, requestPickupAction } from "@/actions/orders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import type { Address } from "@prisma/client";
 import { PICKUP_TIME_SLOTS } from "@/types/constants";
+import type { TimeSlot } from "@/types";
 
 interface Props {
   orderId: string;
@@ -23,6 +24,16 @@ export default function PickupScheduleCard({ orderId, addressId, address }: Prop
   const [selectedDate, setSelectedDate] = useState("");
   const [selectedSlot, setSelectedSlot] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+
+  const resetSelectedSlotIfUnavailable = useEffectEvent((slots: TimeSlot[]) => {
+    if (!selectedSlot) return;
+
+    if (!slots.some((slot) => slot.value === selectedSlot && slot.available)) {
+      setSelectedSlot("");
+    }
+  });
 
   const availableDates = Array.from({ length: 14 }, (_, i) => {
     const d = new Date();
@@ -30,6 +41,45 @@ export default function PickupScheduleCard({ orderId, addressId, address }: Prop
     if (d.getDay() === 0) return null;
     return d;
   }).filter(Boolean) as Date[];
+
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadSlots() {
+      if (!selectedDate) {
+        setAvailableSlots([]);
+        setSelectedSlot("");
+        return;
+      }
+
+      setLoadingSlots(true);
+      const slots = await getAvailableTimeSlotsAction({
+        requestedDate: selectedDate,
+        requestKind: "pickup",
+      });
+
+      if (!isActive) return;
+
+      setAvailableSlots(slots);
+      setLoadingSlots(false);
+      resetSelectedSlotIfUnavailable(slots);
+    }
+
+    void loadSlots();
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedDate]);
+
+  const slotsToShow =
+    selectedDate && availableSlots.length > 0
+      ? availableSlots
+      : PICKUP_TIME_SLOTS.map((slot) => ({
+          ...slot,
+          available: false,
+          remainingCapacity: 0,
+        }));
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -94,19 +144,42 @@ export default function PickupScheduleCard({ orderId, addressId, address }: Prop
 
           <div className="space-y-2">
             <Label>Time Slot</Label>
+            {selectedDate ? (
+              <p className="text-xs text-muted-foreground">
+                Full slots are disabled. Pickups close automatically when capacity is reached.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Choose a date first to see live slot availability.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-2">
-              {PICKUP_TIME_SLOTS.map((slot) => (
+              {slotsToShow.map((slot) => (
                 <button
                   key={slot.value}
                   type="button"
+                  disabled={!slot.available}
                   onClick={() => setSelectedSlot(slot.value)}
                   className={`border rounded-lg px-3 py-2 text-sm text-left transition-all bg-white ${
+                    !slot.available
+                      ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                      : ""
+                  } ${
                     selectedSlot === slot.value
                       ? "border-blue-500 ring-1 ring-blue-500"
-                      : "border-gray-200 hover:border-blue-300"
+                      : slot.available
+                      ? "border-gray-200 hover:border-blue-300"
+                      : ""
                   }`}
                 >
-                  {slot.label}
+                  <div className="font-medium">{slot.label}</div>
+                  <div className="mt-1 text-xs">
+                    {!selectedDate || loadingSlots
+                      ? "Checking availability..."
+                      : slot.available
+                      ? `${slot.remainingCapacity} slot${slot.remainingCapacity === 1 ? "" : "s"} left`
+                      : "Fully booked"}
+                  </div>
                 </button>
               ))}
             </div>

@@ -1,12 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useEffectEvent, useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 import {
   createOrderAction,
   analyzeOrderImageAction,
   confirmOrderAction,
+  getAvailableTimeSlotsAction,
+  requestPickupAction,
   saveAddressAction,
 } from "@/actions/orders";
 import { enrichItemsWithPrices, calculatePriceBreakdown, BASE_ORDER_PRICE_SGD } from "@/lib/pricing/pricingEngine";
@@ -21,11 +23,12 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Separator } from "@/components/ui/separator";
 import type { Address } from "@prisma/client";
-import type { EditableOrderItem } from "@/types";
+import type { EditableOrderItem, TimeSlot } from "@/types";
 import { ServiceType, CollectionMethod } from "@prisma/client";
 import {
   SERVICE_TYPE_LABELS,
   CLOTHING_CATEGORY_LABELS,
+  PICKUP_TIME_SLOTS,
 } from "@/types/constants";
 import { Camera, Car, Store, Truck } from "lucide-react";
 
@@ -41,14 +44,13 @@ type Step = "service" | "photo" | "review" | "schedule";
 
 interface Props {
   addresses: Address[];
-  customerId: string;
 }
 
 // ──────────────────────────────────────────
 // WIZARD COMPONENT
 // ──────────────────────────────────────────
 
-export default function NewOrderWizard({ addresses, customerId }: Props) {
+export default function NewOrderWizard({ addresses }: Props) {
   const router = useRouter();
 
   const [step, setStep] = useState<Step>("service");
@@ -729,8 +731,16 @@ function PickupScheduleForm({
   const [newAddrStreet, setNewAddrStreet] = useState("");
   const [newAddrPostal, setNewAddrPostal] = useState("");
   const [savingAddr, setSavingAddr] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState<TimeSlot[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
 
-  const { requestPickupAction } = require("@/actions/orders");
+  const resetSelectedSlotIfUnavailable = useEffectEvent((slots: TimeSlot[]) => {
+    if (!selectedSlot) return;
+
+    if (!slots.some((slot) => slot.value === selectedSlot && slot.available)) {
+      setSelectedSlot("");
+    }
+  });
 
   async function handleSaveAddress() {
     setSavingAddr(true);
@@ -770,13 +780,44 @@ function PickupScheduleForm({
     toast.success("Address saved!");
   }
 
-  const timeSlots = [
-    { value: "09:00-11:00", label: "Morning (9am – 11am)" },
-    { value: "11:00-13:00", label: "Late Morning (11am – 1pm)" },
-    { value: "13:00-15:00", label: "Afternoon (1pm – 3pm)" },
-    { value: "15:00-17:00", label: "Late Afternoon (3pm – 5pm)" },
-    { value: "17:00-19:00", label: "Evening (5pm – 7pm)" },
-  ];
+  useEffect(() => {
+    let isActive = true;
+
+    async function loadSlots() {
+      if (!selectedDate) {
+        setAvailableSlots([]);
+        setSelectedSlot("");
+        return;
+      }
+
+      setLoadingSlots(true);
+      const slots = await getAvailableTimeSlotsAction({
+        requestedDate: selectedDate,
+        requestKind: "pickup",
+      });
+
+      if (!isActive) return;
+
+      setAvailableSlots(slots);
+      setLoadingSlots(false);
+      resetSelectedSlotIfUnavailable(slots);
+    }
+
+    void loadSlots();
+
+    return () => {
+      isActive = false;
+    };
+  }, [selectedDate]);
+
+  const timeSlots =
+    selectedDate && availableSlots.length > 0
+      ? availableSlots
+      : PICKUP_TIME_SLOTS.map((slot) => ({
+          ...slot,
+          available: false,
+          remainingCapacity: 0,
+        }));
 
   async function handleSubmit() {
     if (!selectedDate || !selectedSlot || !selectedAddress) {
@@ -835,19 +876,42 @@ function PickupScheduleForm({
 
       <div className="space-y-2">
         <Label>Time Slot</Label>
+        {selectedDate ? (
+          <p className="text-xs text-muted-foreground">
+            Full slots are disabled automatically once the day gets crowded.
+          </p>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            Select a pickup date first to load the available time slots.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-2">
           {timeSlots.map((slot) => (
             <button
               key={slot.value}
               type="button"
+              disabled={!slot.available}
               onClick={() => setSelectedSlot(slot.value)}
               className={`border rounded-lg px-3 py-2 text-sm text-left transition-all ${
+                !slot.available
+                  ? "cursor-not-allowed border-gray-200 bg-gray-100 text-gray-400"
+                  : ""
+              } ${
                 selectedSlot === slot.value
                   ? "border-blue-500 bg-blue-50 text-blue-700"
-                  : "border-gray-200 hover:border-gray-300"
+                  : slot.available
+                  ? "border-gray-200 hover:border-gray-300"
+                  : ""
               }`}
             >
-              {slot.label}
+              <div className="font-medium">{slot.label}</div>
+              <div className="mt-1 text-xs">
+                {!selectedDate || loadingSlots
+                  ? "Checking availability..."
+                  : slot.available
+                  ? `${slot.remainingCapacity} slot${slot.remainingCapacity === 1 ? "" : "s"} left`
+                  : "Fully booked"}
+              </div>
             </button>
           ))}
         </div>

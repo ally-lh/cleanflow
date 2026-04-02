@@ -9,6 +9,11 @@ import { OrderStatus, ScheduleRequestStatus } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+const ADMIN_HIDDEN_ORDER_STATUSES: OrderStatus[] = [
+  "DRAFT",
+  "PHOTO_ANALYZED",
+];
+
 // ──────────────────────────────────────────
 // DASHBOARD STATS
 // ──────────────────────────────────────────
@@ -29,9 +34,13 @@ export async function getAdminDashboardStats(): Promise<AdminDashboardStats> {
     completedToday,
     pendingBillingConfirmation,
   ] = await Promise.all([
-    db.order.count(),
     db.order.count({
-      where: { status: { in: ["PENDING_PICKUP_SCHEDULING", "PICKUP_SCHEDULED"] } },
+      where: { status: { notIn: ADMIN_HIDDEN_ORDER_STATUSES } },
+    }),
+    db.order.count({
+      where: {
+        status: { in: ["PENDING_PICKUP_SCHEDULING", "PICKUP_SCHEDULED"] },
+      },
     }),
     db.order.count({
       where: {
@@ -72,6 +81,7 @@ export async function getAdminOrdersAction(filters?: {
 
   return db.order.findMany({
     where: {
+      status: filters?.status ?? { notIn: ADMIN_HIDDEN_ORDER_STATUSES },
       ...(filters?.status ? { status: filters.status } : {}),
       ...(filters?.search
         ? {
@@ -115,6 +125,24 @@ export async function updateOrderStatusAction(
   const parsed = UpdateStatusSchema.safeParse(input);
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0].message };
+  }
+
+  if (parsed.data.status === "COMPLETED") {
+    const order = await db.order.findUnique({
+      where: { id: parsed.data.orderId },
+      include: { invoice: true },
+    });
+
+    if (!order) {
+      return { success: false, error: "Order not found." };
+    }
+
+    if (!order.invoice || order.invoice.status !== "PAID") {
+      return {
+        success: false,
+        error: "Order can only be completed after payment succeeds.",
+      };
+    }
   }
 
   const updateData: Record<string, unknown> = { status: parsed.data.status };
@@ -292,7 +320,12 @@ export async function getActiveDriversAction() {
 export async function getPendingPickupsAction() {
   await requireAdmin();
   return db.pickupRequest.findMany({
-    where: { status: "PENDING" },
+    where: {
+      status: "PENDING",
+      order: {
+        status: { notIn: ADMIN_HIDDEN_ORDER_STATUSES },
+      },
+    },
     include: {
       order: { include: { customer: { include: { user: true } }, invoice: true } },
       address: true,
