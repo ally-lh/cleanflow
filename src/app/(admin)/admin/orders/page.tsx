@@ -30,7 +30,9 @@ export default async function AdminOrdersPage({
       <div className="flex flex-wrap gap-2">
         {[
           { label: "All", status: undefined },
-          { label: "Pending Pickup", status: "PENDING_PICKUP_SCHEDULING" },
+          { label: "Pending Confirmation", status: "PENDING_CONFIRMATION" },
+          { label: "Awaiting Pickup", status: "PENDING_PICKUP_SCHEDULING" },
+          { label: "Scheduled Pickup", status: "PICKUP_SCHEDULED" },
           { label: "In Progress", status: "WASHING" },
           { label: "Ready", status: "READY_FOR_COLLECTION" },
           { label: "Completed", status: "COMPLETED" },

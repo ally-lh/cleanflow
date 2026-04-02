@@ -1,13 +1,8 @@
 // AI Laundry Image Analysis Service
 //
-// This module provides the analyzeLaundryImage() abstraction.
-// Currently uses a MOCK implementation that returns simulated results.
-//
-// To integrate a real model (e.g. OpenAI Vision, Google Vision, Claude):
-//   1. Replace the body of `callAIModel()` with the real API call
-//   2. Parse the real response into AIAnalysisResult
-//   3. Update modelUsed to the actual model name
-//   4. Set NEXT_PUBLIC_AI_ENABLED=true in .env
+// Uses Google Gemini for vision-based laundry detection.
+// Set ENABLE_REAL_AI=true and GEMINI_API_KEY in .env to activate.
+// Falls back to mock data when ENABLE_REAL_AI is not set.
 
 import type { AIAnalysisResult, DetectedItem } from "@/types";
 import { ClothingCategory } from "@prisma/client";
@@ -41,7 +36,9 @@ export async function analyzeLaundryImage(
 // (Replace callRealAIModel with a real integration)
 // ──────────────────────────────────────────
 
-async function callMockModel(_imageUrl: string): Promise<AIAnalysisResult> {
+async function callMockModel(imageUrl: string): Promise<AIAnalysisResult> {
+  void imageUrl;
+
   // Simulate network delay
   await new Promise((r) => setTimeout(r, 1200));
 
@@ -63,27 +60,99 @@ async function callMockModel(_imageUrl: string): Promise<AIAnalysisResult> {
 }
 
 // ──────────────────────────────────────────
-// REAL AI MODEL PLACEHOLDER
-// Swap in OpenAI / Claude / Google Vision here
+// REAL AI — Google Gemini (Vision)
 // ──────────────────────────────────────────
 
-async function callRealAIModel(_imageUrl: string): Promise<AIAnalysisResult> {
-  // Example OpenAI Vision integration (commented out):
-  //
-  // const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-  // const response = await openai.chat.completions.create({
-  //   model: "gpt-4o",
-  //   messages: [{
-  //     role: "user",
-  //     content: [
-  //       { type: "text", text: LAUNDRY_ANALYSIS_PROMPT },
-  //       { type: "image_url", image_url: { url: imageUrl } }
-  //     ]
-  //   }]
-  // });
-  // return parseOpenAIResponse(response.choices[0].message.content);
+const DEFAULT_GEMINI_MODEL = "gemini-2.5-flash";
 
-  throw new Error("Real AI model not yet configured. Set ENABLE_REAL_AI=false.");
+async function callRealAIModel(imageUrl: string): Promise<AIAnalysisResult> {
+  const { GoogleGenerativeAI } = await import("@google/generative-ai");
+
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) throw new Error("GEMINI_API_KEY is not set in environment.");
+
+  const modelName = process.env.GEMINI_MODEL || DEFAULT_GEMINI_MODEL;
+  const genAI = new GoogleGenerativeAI(apiKey);
+  const model = genAI.getGenerativeModel({ model: modelName });
+
+  // imageUrl is a data URL (e.g. data:image/jpeg;base64,...)
+  const [header, base64Data] = imageUrl.split(",");
+  const mimeType = header.match(/data:(.*);base64/)?.[1] ?? "image/jpeg";
+
+  let result;
+  try {
+    result = await model.generateContent([
+      LAUNDRY_ANALYSIS_PROMPT,
+      { inlineData: { data: base64Data, mimeType } },
+    ]);
+  } catch (err) {
+    const status = (err as { status?: number }).status;
+    if (status === 429) {
+      const fallback = await callMockModel(imageUrl);
+      return {
+        ...fallback,
+        previewWarnings: [
+          "AI analysis is temporarily unavailable (quota exceeded). Showing estimated data — please adjust quantities manually.",
+          ...fallback.previewWarnings,
+        ],
+        modelUsed: "mock-v1-quota-fallback",
+      };
+    }
+    if (status === 404) {
+      const fallback = await callMockModel(imageUrl);
+      return {
+        ...fallback,
+        previewWarnings: [
+          `AI model "${modelName}" is unavailable for this API key. Showing estimated data instead — please verify quantities manually.`,
+          ...fallback.previewWarnings,
+        ],
+        modelUsed: `mock-v1-missing-model-fallback:${modelName}`,
+      };
+    }
+    throw err;
+  }
+
+  const text = result.response.text();
+
+  // Strip markdown code fences if Gemini wraps the JSON
+  const jsonText = text.replace(/^```(?:json)?\s*/i, "").replace(/\s*```$/, "").trim();
+
+  const parsed = JSON.parse(jsonText) as {
+    detectedItems?: Array<{
+      category: string;
+      label: string;
+      quantity: number;
+      confidence: number;
+    }>;
+    totalEstimatedPieces?: number;
+    previewWarnings?: string[];
+  };
+
+  const detectedItems: DetectedItem[] = (parsed.detectedItems ?? []).map(
+    (item) => ({
+      category: item.category as ClothingCategory,
+      label: item.label,
+      quantity: item.quantity,
+      confidence: item.confidence,
+    })
+  );
+
+  const totalEstimatedPieces =
+    parsed.totalEstimatedPieces ??
+    detectedItems.reduce((sum, i) => sum + i.quantity, 0);
+
+  const warnings = [
+    ...(parsed.previewWarnings ?? []),
+    "This is an AI estimate only. Please verify quantities before submitting.",
+  ];
+
+  return {
+    detectedItems,
+    totalEstimatedPieces,
+    detectedItemsSummary: buildSummary(detectedItems),
+    previewWarnings: warnings,
+    modelUsed: modelName,
+  };
 }
 
 // ──────────────────────────────────────────

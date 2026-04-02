@@ -18,10 +18,7 @@ export default async function NewOrderPage() {
           Tell us about your laundry and we&apos;ll take care of the rest.
         </p>
       </div>
-      <NewOrderWizard
-        addresses={customerProfile?.addresses ?? []}
-        customerId={customerProfile?.id ?? ""}
-      />
+      <NewOrderWizard addresses={customerProfile?.addresses ?? []} />
     </div>
   );
 }

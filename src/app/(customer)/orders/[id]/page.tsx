@@ -8,9 +8,10 @@ import { Separator } from "@/components/ui/separator";
 import {
   CLOTHING_CATEGORY_LABELS,
   SERVICE_TYPE_LABELS,
-  ORDER_STATUS_LABELS,
 } from "@/types/constants";
 import PickupScheduleCard from "@/components/customer/PickupScheduleCard";
+import DeleteDraftOrderButton from "@/components/customer/DeleteDraftOrderButton";
+import PayInvoiceButton from "@/components/customer/PayInvoiceButton";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 
@@ -28,6 +29,20 @@ export default async function OrderDetailPage({
     !order.invoice?.confirmedTotal && order.invoice?.estimatedTotal;
   const canSchedulePickup =
     order.status === "PENDING_PICKUP_SCHEDULING" && !order.pickupRequest;
+  const isDraft = order.status === "DRAFT";
+  const canPayInvoice =
+    !!order.invoice &&
+    order.invoice.status === "CONFIRMED" &&
+    [
+      "PICKUP_SCHEDULED",
+      "PICKED_UP",
+      "RECEIVED_AT_STORE",
+      "WASHING",
+      "DRYING",
+      "PRESSING_OR_FINISHING",
+      "READY_FOR_COLLECTION",
+      "OUT_FOR_DELIVERY",
+    ].includes(order.status);
 
   return (
     <div className="space-y-6">
@@ -49,7 +64,16 @@ export default async function OrderDetailPage({
             })}
           </p>
         </div>
-        <Link href="/dashboard"><Button variant="outline" size="sm">Back</Button></Link>
+        <div className="flex items-center gap-2">
+          {isDraft && (
+            <DeleteDraftOrderButton
+              orderId={order.id}
+              orderNumber={order.orderNumber}
+              redirectTo="/dashboard"
+            />
+          )}
+          <Link href="/dashboard"><Button variant="outline" size="sm">Back</Button></Link>
+        </div>
       </div>
 
       {/* Status Timeline */}
@@ -156,6 +180,11 @@ export default async function OrderDetailPage({
                   Estimated — pending staff verification
                 </Badge>
               )}
+              {!isEstimate && (
+                <Badge variant="secondary" className="text-xs font-normal">
+                  {order.invoice.status.replace(/_/g, " ")}
+                </Badge>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-2 text-sm">
@@ -185,6 +214,30 @@ export default async function OrderDetailPage({
               <p className="text-xs text-amber-600 bg-amber-50 rounded p-2 mt-2">
                 This is an estimated amount. The final bill will be confirmed by
                 our staff after physical inspection.
+              </p>
+            )}
+            {canPayInvoice && (
+              <div className="flex flex-col gap-2 rounded-lg border border-emerald-200 bg-emerald-50 p-3">
+                <p className="text-xs text-emerald-800">
+                  You can pay anytime after pickup is scheduled. The order will
+                  only be marked completed after payment succeeds.
+                </p>
+                <PayInvoiceButton
+                  orderId={order.id}
+                  amount={order.invoice.finalTotal ?? order.invoice.estimatedTotal}
+                />
+              </div>
+            )}
+            {order.invoice.status === "PAID" && (
+              <p className="text-xs text-emerald-700 bg-emerald-50 rounded p-2">
+                Payment received
+                {order.invoice.paidAt
+                  ? ` on ${new Date(order.invoice.paidAt).toLocaleDateString("en-SG", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })}.`
+                  : "."}
               </p>
             )}
           </CardContent>

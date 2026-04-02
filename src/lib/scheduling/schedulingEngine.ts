@@ -8,35 +8,73 @@ import { db } from "@/lib/db";
 import type { TimeSlot } from "@/types";
 import { PICKUP_TIME_SLOTS } from "@/types/constants";
 
+export type ScheduleKind = "pickup" | "delivery";
+
+const DEFAULT_SLOT_CAPACITY: Record<ScheduleKind, number> = {
+  pickup: 3,
+  delivery: 2,
+};
+
 // ──────────────────────────────────────────
 // PUBLIC API
 // ──────────────────────────────────────────
 
 /**
- * Get available pickup time slots for a given date.
+ * Get available pickup or delivery time slots for a given date.
  * Returns all slots with remaining capacity info.
  */
-export async function getAvailableSlots(date: Date): Promise<TimeSlot[]> {
+export async function getAvailableSlots(
+  date: Date,
+  kind: ScheduleKind = "pickup"
+): Promise<TimeSlot[]> {
   const startOfDay = new Date(date);
   startOfDay.setHours(0, 0, 0, 0);
   const endOfDay = new Date(date);
   endOfDay.setHours(23, 59, 59, 999);
 
-  // Fetch slots from DB (if none exist, all slots are available at full capacity)
-  const existingSlots = await db.scheduleSlot.findMany({
-    where: {
-      date: { gte: startOfDay, lte: endOfDay },
-    },
-  });
+  const [existingSlots, scheduledRequests] = await Promise.all([
+    db.scheduleSlot.findMany({
+      where: {
+        date: { gte: startOfDay, lte: endOfDay },
+      },
+    }),
+    kind === "pickup"
+      ? db.pickupRequest.findMany({
+          where: {
+            requestedDate: { gte: startOfDay, lte: endOfDay },
+            status: { in: ["PENDING", "APPROVED"] },
+          },
+          select: { requestedSlot: true },
+        })
+      : db.deliveryRequest.findMany({
+          where: {
+            requestedDate: { gte: startOfDay, lte: endOfDay },
+            status: { in: ["PENDING", "APPROVED"] },
+          },
+          select: { requestedSlot: true },
+        }),
+  ]);
 
   const slotMap = new Map(existingSlots.map((s) => [s.startTime, s]));
+  const requestCountBySlot = new Map<string, number>();
+
+  scheduledRequests.forEach((request) => {
+    if (!request.requestedSlot) return;
+
+    requestCountBySlot.set(
+      request.requestedSlot,
+      (requestCountBySlot.get(request.requestedSlot) ?? 0) + 1
+    );
+  });
 
   return PICKUP_TIME_SLOTS.map((template) => {
     const [start] = template.value.split("-");
     const dbSlot = slotMap.get(start);
+    const requestCount = requestCountBySlot.get(template.value) ?? 0;
 
     if (dbSlot) {
-      const remaining = dbSlot.maxCapacity - dbSlot.bookedCount;
+      const bookedCount = Math.max(dbSlot.bookedCount, requestCount);
+      const remaining = dbSlot.maxCapacity - bookedCount;
       return {
         value: template.value,
         label: template.label,
@@ -49,8 +87,8 @@ export async function getAvailableSlots(date: Date): Promise<TimeSlot[]> {
     return {
       value: template.value,
       label: template.label,
-      available: true,
-      remainingCapacity: 3, // default max capacity
+      available: requestCount < DEFAULT_SLOT_CAPACITY[kind],
+      remainingCapacity: Math.max(0, DEFAULT_SLOT_CAPACITY[kind] - requestCount),
     };
   });
 }

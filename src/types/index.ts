@@ -132,6 +132,7 @@ export interface PriceBreakdownItem {
 
 export interface PriceBreakdown {
   items: PriceBreakdownItem[];
+  baseFee: number;
   subtotal: number;
   deliveryFee: number;
   discount: number;

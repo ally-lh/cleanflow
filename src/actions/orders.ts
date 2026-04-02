@@ -7,11 +7,37 @@ import { analyzeLaundryImage } from "@/lib/ai/analyzeLaundryImage";
 import { enrichItemsWithPrices, calculatePriceBreakdown } from "@/lib/pricing/pricingEngine";
 import { logOrderEvent, logStatusChange } from "@/lib/telemetry/orderEvents";
 import { geocodePostalCode } from "@/lib/geo/geocoding";
+import { getAvailableSlots, type ScheduleKind } from "@/lib/scheduling/schedulingEngine";
 import type { ActionResult } from "./auth";
-import type { EditableOrderItem, ConfirmOrderInput } from "@/types";
-import { ServiceType, OrderStatus, CollectionMethod, PickupMethod } from "@prisma/client";
+import type { EditableOrderItem, ConfirmOrderInput, TimeSlot } from "@/types";
+import { Prisma, ServiceType, OrderStatus, CollectionMethod, PickupMethod } from "@prisma/client";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
+
+const PAYMENT_ELIGIBLE_ORDER_STATUSES: OrderStatus[] = [
+  "PICKUP_SCHEDULED",
+  "PICKED_UP",
+  "RECEIVED_AT_STORE",
+  "WASHING",
+  "DRYING",
+  "PRESSING_OR_FINISHING",
+  "READY_FOR_COLLECTION",
+  "OUT_FOR_DELIVERY",
+];
+
+const ADMIN_HIDDEN_ORDER_STATUSES: OrderStatus[] = [
+  "DRAFT",
+  "PHOTO_ANALYZED",
+];
+
+function isOrderNumberConflict(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === "P2002" &&
+    Array.isArray(error.meta?.target) &&
+    error.meta.target.includes("orderNumber")
+  );
+}
 
 // ──────────────────────────────────────────
 // CREATE DRAFT ORDER
@@ -48,19 +74,35 @@ export async function createOrderAction(
     return { success: false, error: "Customer profile not found." };
   }
 
-  const orderNumber = await generateOrderNumber();
+  let order;
+  let orderNumber = "";
 
-  const order = await db.order.create({
-    data: {
-      orderNumber,
-      customerId: customerProfile.id,
-      serviceType: parsed.data.serviceType,
-      pickupMethod: parsed.data.pickupMethod,
-      specialNotes: parsed.data.specialNotes,
-      addressId: parsed.data.addressId,
-      status: "DRAFT",
-    },
-  });
+  for (let attempt = 0; attempt < 5; attempt += 1) {
+    orderNumber = await generateOrderNumber();
+
+    try {
+      order = await db.order.create({
+        data: {
+          orderNumber,
+          customerId: customerProfile.id,
+          serviceType: parsed.data.serviceType,
+          pickupMethod: parsed.data.pickupMethod,
+          specialNotes: parsed.data.specialNotes,
+          addressId: parsed.data.addressId,
+          status: "DRAFT",
+        },
+      });
+      break;
+    } catch (error) {
+      if (!isOrderNumberConflict(error) || attempt === 4) {
+        throw error;
+      }
+    }
+  }
+
+  if (!order) {
+    return { success: false, error: "Unable to create order right now. Please try again." };
+  }
 
   await logStatusChange({ orderId: order.id, status: "DRAFT", changedBy: user.id });
   await logOrderEvent({
@@ -261,28 +303,56 @@ export async function requestPickupAction(
   }
 
   const { orderId, addressId, requestedDate, requestedSlot } = parsed.data;
+  const requestedDateValue = new Date(requestedDate);
+
+  if (Number.isNaN(requestedDateValue.getTime())) {
+    return { success: false, error: "Please choose a valid date." };
+  }
 
   const order = await db.order.findUnique({
     where: { id: orderId },
-    include: { customer: true },
+    include: { customer: true, pickupRequest: true },
   });
 
   if (!order || order.customer.userId !== user.id) {
     return { success: false, error: "Order not found." };
   }
 
+  const isUnchangedRequest =
+    order.pickupRequest &&
+    order.pickupRequest.requestedSlot === requestedSlot &&
+    order.pickupRequest.requestedDate.toISOString().split("T")[0] === requestedDate;
+
+  if (!isUnchangedRequest) {
+    const availableSlots = await getAvailableSlots(requestedDateValue, "pickup");
+    const selectedSlotAvailability = availableSlots.find(
+      (slot) => slot.value === requestedSlot
+    );
+
+    if (!selectedSlotAvailability) {
+      return { success: false, error: "That time slot is not available." };
+    }
+
+    if (!selectedSlotAvailability.available) {
+      return {
+        success: false,
+        error: "That pickup slot is already full. Please choose another time.",
+      };
+    }
+  }
+
   await db.pickupRequest.upsert({
     where: { orderId },
     update: {
       addressId,
-      requestedDate: new Date(requestedDate),
+      requestedDate: requestedDateValue,
       requestedSlot,
       status: "PENDING",
     },
     create: {
       orderId,
       addressId,
-      requestedDate: new Date(requestedDate),
+      requestedDate: requestedDateValue,
       requestedSlot,
       status: "PENDING",
     },
@@ -318,6 +388,32 @@ const AddressSchema = z.object({
   country: z.string().default("Singapore"),
   isDefault: z.boolean().default(false),
 });
+
+const SlotAvailabilitySchema = z.object({
+  requestedDate: z.string().min(1),
+  requestKind: z.enum(["pickup", "delivery"]).optional(),
+});
+
+export async function getAvailableTimeSlotsAction(
+  input: z.infer<typeof SlotAvailabilitySchema>
+): Promise<TimeSlot[]> {
+  await requireAuth();
+
+  const parsed = SlotAvailabilitySchema.safeParse(input);
+  if (!parsed.success) {
+    return [];
+  }
+
+  const date = new Date(parsed.data.requestedDate);
+  if (Number.isNaN(date.getTime())) {
+    return [];
+  }
+
+  return getAvailableSlots(
+    date,
+    (parsed.data.requestKind ?? "pickup") as ScheduleKind
+  );
+}
 
 export async function saveAddressAction(
   formData: FormData
@@ -389,10 +485,102 @@ export async function getMyOrdersAction() {
       items: true,
       invoice: true,
       pickupRequest: true,
+      deliveryRequest: true,
       statusHistory: { orderBy: { createdAt: "desc" }, take: 1 },
     },
     orderBy: { createdAt: "desc" },
   });
+}
+
+export async function deleteDraftOrderAction(
+  orderId: string
+): Promise<ActionResult> {
+  const user = await requireAuth();
+
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: { customer: true },
+  });
+
+  if (!order || order.customer.userId !== user.id) {
+    return { success: false, error: "Order not found." };
+  }
+
+  if (order.status !== "DRAFT") {
+    return { success: false, error: "Only draft orders can be deleted." };
+  }
+
+  await db.order.delete({
+    where: { id: orderId },
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath("/orders/new");
+  revalidatePath("/profile/orders");
+
+  return { success: true };
+}
+
+export async function payInvoiceAction(
+  orderId: string
+): Promise<ActionResult> {
+  const user = await requireAuth();
+
+  const order = await db.order.findUnique({
+    where: { id: orderId },
+    include: {
+      customer: true,
+      invoice: true,
+    },
+  });
+
+  if (!order || order.customer.userId !== user.id) {
+    return { success: false, error: "Order not found." };
+  }
+
+  if (!order.invoice) {
+    return { success: false, error: "Invoice not found." };
+  }
+
+  if (!PAYMENT_ELIGIBLE_ORDER_STATUSES.includes(order.status)) {
+    return {
+      success: false,
+      error: "Payment is available after pickup has been scheduled.",
+    };
+  }
+
+  if (order.invoice.status !== "CONFIRMED") {
+    return {
+      success: false,
+      error: "Payment is available once the final invoice has been confirmed.",
+    };
+  }
+
+  if (order.invoice.paidAt || order.invoice.status === "PAID") {
+    return { success: false, error: "This invoice has already been paid." };
+  }
+
+  await db.invoice.update({
+    where: { orderId },
+    data: {
+      status: "PAID",
+      paidAt: new Date(),
+    },
+  });
+
+  await logOrderEvent({
+    orderId,
+    userId: user.id,
+    type: "GENERAL",
+    message: "Customer payment recorded successfully.",
+  });
+
+  revalidatePath("/dashboard");
+  revalidatePath(`/orders/${orderId}`);
+  revalidatePath("/admin/orders");
+  revalidatePath(`/admin/orders/${orderId}`);
+
+  return { success: true };
 }
 
 // ──────────────────────────────────────────
@@ -424,6 +612,13 @@ export async function getOrderDetailAction(orderId: string) {
   const isAdmin = user.role === "ADMIN" || user.role === "SUPER_ADMIN";
 
   if (!isOwner && !isAdmin) return null;
+  if (
+    isAdmin &&
+    !isOwner &&
+    ADMIN_HIDDEN_ORDER_STATUSES.includes(order.status)
+  ) {
+    return null;
+  }
 
   return order;
 }
