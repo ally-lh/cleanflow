@@ -9,6 +9,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = ''
 import json
 from pathlib import Path
 from contextlib import asynccontextmanager
+from typing import Optional
 import uvicorn
 import torch
 torch.set_num_threads(4)
@@ -92,7 +93,7 @@ CATEGORY_MAP = {
     "jacket": "Jacket",
 }
 
-def extract_category_from_query(query: str) -> str | None:
+def extract_category_from_query(query: str) -> Optional[str]:
     q = query.lower()
     for category, keywords in CATEGORY_KEYWORDS.items():
         for kw in keywords:
@@ -100,7 +101,7 @@ def extract_category_from_query(query: str) -> str | None:
                 return CATEGORY_MAP[category]
     return None
 
-def get_category_from_query(q: str) -> str | None:
+def get_category_from_query(q: str) -> Optional[str]:
     for category, keywords in CATEGORY_KEYWORDS.items():
         for kw in keywords:
             if kw in q:
@@ -115,7 +116,7 @@ OCCASION_KEYWORDS = {
     "date": ["date", "date night", "romantic", "dinner"],
 }
 
-def keyword_search(query: str, cat_filter: str | None = None) -> dict:
+def keyword_search(query: str, cat_filter: Optional[str] = None) -> dict:
     q = query.lower()
     scores = {}
     
@@ -165,7 +166,7 @@ def keyword_search(query: str, cat_filter: str | None = None) -> dict:
     
     return scores
 
-def clip_search_with_embeddings(query: str, top_k: int = 14, category: str | None = None):
+def clip_search_with_embeddings(query: str, top_k: int = 14, category: Optional[str] = None):
     global model, preprocess_val, tokenizer, embeddings, metadata
     
     if not embeddings:
@@ -204,7 +205,7 @@ def clip_search_with_embeddings(query: str, top_k: int = 14, category: str | Non
         for sim, idx in similarities[:top_k]
     ]
 
-def clip_search_realtime(query: str, top_k: int = 14, category: str | None = None):
+def clip_search_realtime(query: str, top_k: int = 14, category: Optional[str] = None):
     global model, preprocess_val, tokenizer, catalog
     
     mod, preproc, tok = init_model()
