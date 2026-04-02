@@ -1,6 +1,6 @@
 [
   {
-    "id": "R-101",
+    "id": "R-001",
     "name": "Valen Sash Tie Maxi Jumpsuit Black",
     "category": "Jumpsuit",
     "size": "S-XL",
@@ -12,7 +12,7 @@
     "image": "001_Valen Sash Tie Maxi Jumpsuit Black.jpg"
   },
   {
-    "id": "R-102",
+    "id": "R-002",
     "name": "Kandy Mesh Peephole Jumpsuit Blush",
     "category": "Jumpsuit",
     "size": "XS-XL",
@@ -24,7 +24,7 @@
     "image": "002_Kandy Mesh Peephole Jumpsuit.png"
   },
   {
-    "id": "R-103",
+    "id": "R-003",
     "name": "Melinda V Neck Vest Top Grey",
     "category": "Top",
     "size": "XS-XL",
@@ -36,7 +36,7 @@
     "image": "003_Melinda V Neck Vest Top Grey.png"
   },
   {
-    "id": "R-104",
+    "id": "R-004",
     "name": "Aria Tweed Vest Top Black",
     "category": "Top",
     "size": "XS-XL",
@@ -48,7 +48,7 @@
     "image": "004_Aria Tweed Vest Top Black.png"
   },
   {
-    "id": "R-105",
+    "id": "R-005",
     "name": "Celeste Soft Denim Dress Dark Wash",
     "category": "Dress",
     "size": "XS-XL",
@@ -60,7 +60,7 @@
     "image": "005_Celeste Soft Denim Dress Dark Wash.jpg"
   },
   {
-    "id": "R-106",
+    "id": "R-006",
     "name": "Orient Cheongsam Jacquard Ribbon Top Yellow",
     "category": "Top",
     "size": "S-XL",
@@ -72,7 +72,7 @@
     "image": "006_Orient Cheongsam Jacquard Ribbon Top Yellow.png"
   },
   {
-    "id": "R-107",
+    "id": "R-007",
     "name": "Althaea Peplum Top Cream",
     "category": "Top",
     "size": "XS-XL",
@@ -84,7 +84,7 @@
     "image": "007_Althaea Peplum Top Cream.jpg"
   },
   {
-    "id": "R-108",
+    "id": "R-008",
     "name": "Liyra Floral Soft Jacquard Dress Pink",
     "category": "Dress",
     "size": "XS-XL",
@@ -96,7 +96,7 @@
     "image": "008_Liyra Floral Soft Jacquard Dress Pink.jpg"
   },
   {
-    "id": "R-109",
+    "id": "R-009",
     "name": "Cynthia Crepe Mini Dress Yellow",
     "category": "Dress",
     "size": "XS-XL",
@@ -108,7 +108,7 @@
     "image": "009_Cynthia Crepe Mini Dress Yellow.jpg"
   },
   {
-    "id": "R-110",
+    "id": "R-010",
     "name": "Natasha Puff Sleeves Pleated Romper Forest",
     "category": "Romper",
     "size": "XS-XL",
@@ -120,7 +120,7 @@
     "image": "010_Natasha Puff Sleeves Pleated Romper Forest.jpg"
   },
   {
-    "id": "R-111",
+    "id": "R-011",
     "name": "Fania Halter Neck Midi Dress Black",
     "category": "Dress",
     "size": "XS-XL",
@@ -132,7 +132,7 @@
     "image": "011_Fania Halter Neck Midi Dress Black.jpg"
   },
   {
-    "id": "R-112",
+    "id": "R-012",
     "name": "Slim-Fit Tuxedo Jacket",
     "category": "Suit",
     "size": "S-XL",
@@ -144,7 +144,7 @@
     "image": "012_Slim-Fit Tuxedo Jacket.png"
   },
   {
-    "id": "R-113",
+    "id": "R-013",
     "name": "Cowl Neck Oblique-layered Silk Dress",
     "category": "Dress",
     "size": "XS-XL",
@@ -156,7 +156,7 @@
     "image": "013_Cowl Neck Oblique-layered Silk Dress.jpg"
   },
   {
-    "id": "R-114",
+    "id": "R-014",
     "name": "Pleated Sleeveless Midi Silk Dress",
     "category": "Dress",
     "size": "XS-XL",
@@ -168,7 +168,7 @@
     "image": "014_Pleated Sleeveless Midi Silk Dress.jpg"
   },
   {
-    "id": "R-115",
+    "id": "R-015",
     "name": "Amalfi Stripe Silk Shirtdress with Belt",
     "category": "Dress",
     "size": "M-XL",
@@ -180,7 +180,7 @@
     "image": "015_Amalfi Stripe Silk Shirtdress with Belt"
   },
   {
-    "id": "R-116",
+    "id": "R-016",
     "name": "016_Vivi Knit Dress",
     "category": "Dress",
     "size": "M-XL",
@@ -192,7 +192,7 @@
     "image": "016_Vivi Knit Dress"
   },
   {
-    "id": "R-117",
+    "id": "R-017",
     "name": "Puff-Sleeve Blouse - Made With Liberty Fabric",
     "category": "Top",
     "size": "M-L",
@@ -204,7 +204,7 @@
     "image": "017_Puff-Sleeve Blouse - Made With Liberty Fabric"
   },
   {
-    "id": "R-118",
+    "id": "R-018",
     "name": "Daffodil Print Silk Blouse - Made With Liberty Fabric",
     "category": "Top",
     "size": "M-XL",
@@ -216,7 +216,7 @@
     "image": "018_Daffodil Print Silk Blouse - Made With Liberty Fabric"
   },
   {
-    "id": "R-119",
+    "id": "R-019",
     "name": "Hawaiian Cruise Lily Shirt",
     "category": "Top",
     "size": "M-XL",
@@ -228,7 +228,7 @@
     "image": "019_Hawaiian Cruise Lily Shirt"
   },
   {
-    "id": "R-120",
+    "id": "R-020",
     "name": "Ruched High Neck Flowy Midi Dress in Flora Prints",
     "category": "Dress",
     "size": "M-XL",
@@ -240,7 +240,7 @@
     "image": "020_ACW Ruched High Neck Flowy Midi Dress in Flora Prints"
   },
   {
-    "id": "R-121",
+    "id": "R-021",
     "name": "Ashlyn Embroidery Padded Dress Navy",
     "category": "Dress",
     "size": "S-L",
@@ -252,7 +252,7 @@
     "image": "021_Ashlyn Embroidery Padded Dress Navy"
   },
   {
-    "id": "R-122",
+    "id": "R-022",
     "name": "Carla Gingham Dress Black",
     "category": "Dress",
     "size": "S-L",
@@ -264,7 +264,7 @@
     "image": "022_Carla Gingham Dress Black"
   },
   {
-    "id": "R-123",
+    "id": "R-023",
     "name": "Davina Denim Flare Dress Light Blue",
     "category": "Dress",
     "size": "S-L",
@@ -276,7 +276,7 @@
     "image": "023_Davina Denim Flare Dress Light Blue"
   },
   {
-    "id": "R-124",
+    "id": "R-024",
     "name": "Melody Ruched Floral Dress Cream",
     "category": "Dress",
     "size": "S-L",
@@ -288,7 +288,7 @@
     "image": "024_Melody Ruched Floral Dress Cream"
   },
   {
-    "id": "R-125",
+    "id": "R-025",
     "name": "Xue Flutter Sleeve Dress Dusk",
     "category": "Dress",
     "size": "S-L",
@@ -300,7 +300,7 @@
     "image": "025_Xue Flutter Sleeve Dress Dusk"
   },
   {
-    "id": "R-126",
+    "id": "R-026",
     "name": "Bright Blue Regular Fit Textured Linen Blend Blazer",
     "category": "Blazer",
     "size": "S-L",
@@ -312,7 +312,7 @@
     "image": "026_Bright Blue Regular Fit Textured Linen Blend Blazer"
   },
   {
-    "id": "R-127",
+    "id": "R-027",
     "name": "Neutral Tailored Fit Linen Blend Texture Suit Jacket",
     "category": "Suit",
     "size": "S-L",
@@ -324,7 +324,7 @@
     "image": "027_Neutral Tailored Fit Linen Blend Texture Suit Jacket"
   },
   {
-    "id": "R-128",
+    "id": "R-028",
     "name": "Navy Blue Regular Fit Signature Nova Fides Italian Wool Suit Jacket",
     "category": "Suit",
     "size": "S-L",

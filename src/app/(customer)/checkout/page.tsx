@@ -23,7 +23,6 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
   const [mounted, setMounted] = useState(false);
-  const [subscriptionType, setSubscriptionType] = useState("MONTHLY");
   const [startDate, setStartDate] = useState("");
   const [isProcessing, setIsProcessing] = useState(false);
 
@@ -42,12 +41,6 @@ export default function CheckoutPage() {
   const total = cartItems.reduce((sum, item) => sum + item.pricePerMonth, 0);
   const discount = cartItems.length >= 3 ? total * 0.25 : 0;
   const finalTotal = total - discount;
-
-  const getDiscountedTotal = () => {
-    if (subscriptionType === "QUARTERLY") return finalTotal * 0.95 * 3;
-    if (subscriptionType === "YEARLY") return finalTotal * 0.85 * 12;
-    return finalTotal;
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -115,7 +108,7 @@ export default function CheckoutPage() {
             </CardContent>
           </Card>
 
-          <Card>
+          {/* <Card>
             <CardContent className="p-4">
               <h2 className="font-semibold mb-4">Subscription Plan</h2>
               <div className="grid grid-cols-3 gap-2">
@@ -130,31 +123,9 @@ export default function CheckoutPage() {
                     <div className="text-xs opacity-80">SGD {finalTotal.toFixed(0)}/mo</div>
                   </div>
                 </Button>
-                <Button
-                  type="button"
-                  variant={subscriptionType === "QUARTERLY" ? "default" : "outline"}
-                  onClick={() => setSubscriptionType("QUARTERLY")}
-                  className="w-full"
-                >
-                  <div className="text-center">
-                    <div className="font-bold">Quarterly</div>
-                    <div className="text-xs opacity-80">5% off</div>
-                  </div>
-                </Button>
-                <Button
-                  type="button"
-                  variant={subscriptionType === "YEARLY" ? "default" : "outline"}
-                  onClick={() => setSubscriptionType("YEARLY")}
-                  className="w-full"
-                >
-                  <div className="text-center">
-                    <div className="font-bold">Yearly</div>
-                    <div className="text-xs opacity-80">15% off</div>
-                  </div>
-                </Button>
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           <Card>
             <CardContent className="p-4">
@@ -169,12 +140,13 @@ export default function CheckoutPage() {
                   required
                   className="max-w-xs"
                 />
+              <p className="text-center">Rental period: 30 days</p>
               </div>
             </CardContent>
           </Card>
 
           <Button type="submit" className="w-full" size="lg" disabled={isProcessing}>
-            {isProcessing ? "Processing..." : `Confirm - SGD ${getDiscountedTotal().toFixed(2)}`}
+            {isProcessing ? "Processing..." : `Confirm - SGD ${finalTotal}`}
           </Button>
         </div>
       </form>

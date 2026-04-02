@@ -43,7 +43,7 @@ export interface RentalItem {
 
 export const rentalCatalog: RentalItem[] = [
   {
-    id: "R-101",
+    id: "R-001",
     name: "Valen Sash Tie Maxi Jumpsuit Black",
     category: "Jumpsuit",
     size: "S-XL",
@@ -56,7 +56,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["S", "M", "L"],
   },
   {
-    id: "R-102",
+    id: "R-002",
     name: "Kandy Mesh Peephole Jumpsuit Blush",
     category: "Jumpsuit",
     size: "XS-XL",
@@ -69,7 +69,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L"],
   },
   {
-    id: "R-103",
+    id: "R-003",
     name: "Melinda V Neck Vest Top Grey",
     category: "Top",
     size: "XS-XL",
@@ -82,7 +82,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-104",
+    id: "R-004",
     name: "Aria Tweed Vest Top Black",
     category: "Top",
     size: "XS-XL",
@@ -95,7 +95,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-105",
+    id: "R-005",
     name: "Celeste Soft Denim Dress Dark Wash",
     category: "Dress",
     size: "XS-XL",
@@ -108,7 +108,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M"],
   },
   {
-    id: "R-106",
+    id: "R-006",
     name: "Orient Cheongsam Jacquard Ribbon Top Yellow",
     category: "Top",
     size: "S-XL",
@@ -121,7 +121,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["S", "M", "L", "XL"],
   },
   {
-    id: "R-107",
+    id: "R-007",
     name: "Althaea Peplum Top Cream",
     category: "Top",
     size: "XS-XL",
@@ -134,7 +134,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-108",
+    id: "R-008",
     name: "Liyra Floral Soft Jacquard Dress Pink",
     category: "Dress",
     size: "XS-XL",
@@ -147,7 +147,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-109",
+    id: "R-009",
     name: "Cynthia Crepe Mini Dress Yellow",
     category: "Dress",
     size: "XS-XL",
@@ -160,7 +160,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-110",
+    id: "R-010",
     name: "Natasha Puff Sleeves Pleated Romper Forest",
     category: "Romper",
     size: "XS-XL",
@@ -173,7 +173,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-111",
+    id: "R-011",
     name: "Fania Halter Neck Midi Dress Black",
     category: "Dress",
     size: "XS-XL",
@@ -186,7 +186,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-112",
+    id: "R-012",
     name: "Slim-Fit Tuxedo Jacket",
     category: "Suit",
     size: "S-XL",
@@ -199,7 +199,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["S", "M", "L", "XL"],
   },
   {
-    id: "R-113",
+    id: "R-013",
     name: "Cowl Neck Oblique-layered Silk Dress",
     category: "Dress",
     size: "XS-XL",
@@ -212,7 +212,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-114",
+    id: "R-014",
     name: "Pleated Sleeveless Midi Silk Dress",
     category: "Dress",
     size: "XS-XL",
@@ -225,7 +225,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: ["XS", "S", "M", "L", "XL"],
   },
   {
-    id: "R-115",
+    id: "R-015",
     name: "Amalfi Stripe Silk Shirtdress with Belt",
     category: "Dress",
     size: "M-XL",
@@ -238,7 +238,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L", "XL"],
   },
   {
-    id: "R-116",
+    id: "R-016",
     name: "Vivi Knit Dress",
     category: "Dress",
     size: "M-XL",
@@ -251,7 +251,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L", "XL"],
   },
   {
-    id: "R-117",
+    id: "R-017",
     name: "Puff-Sleeve Blouse - Made With Liberty Fabric",
     category: "Top",
     size: "M-L",
@@ -264,7 +264,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L"],
   },
   {
-    id: "R-118",
+    id: "R-018",
     name: "Daffodil Print Silk Blouse - Made With Liberty Fabric",
     category: "Top",
     size: "M-XL",
@@ -277,7 +277,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L","XL"],
   },
   {
-    id: "R-119",
+    id: "R-019",
     name: "Hawaiian Cruise Lily Shirt",
     category: "Top",
     size: "M-XL",
@@ -290,7 +290,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L","XL"],
   },
   {
-    id: "R-120",
+    id: "R-020",
     name: "Ruched High Neck Flowy Midi Dress in Flora Prints",
     category: "Dress",
     size: "M-XL",
@@ -303,7 +303,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "M", "L","XL"],
   },
   {
-    id: "R-121",
+    id: "R-021",
     name: "Ashlyn Embroidery Padded Dress Navy",
     category: "Dress",
     size: "S-L",
@@ -316,7 +316,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "S","M", "L"],
   },
   {
-    id: "R-122",
+    id: "R-022",
     name: "Carla Gingham Dress Black",
     category: "Dress",
     size: "S-L",
@@ -329,7 +329,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "S","M", "L"],
   },
   {
-    id: "R-123",
+    id: "R-023",
     name: "Davina Denim Flare Dress Light Blue",
     category: "Dress",
     size: "S-L",
@@ -342,7 +342,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "S","M", "L"],
   },
   {
-    id: "R-124",
+    id: "R-024",
     name: "Melody Ruched Floral Dress Cream",
     category: "Dress",
     size: "S-L",
@@ -355,7 +355,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "S","M", "L"],
   },
   {
-    id: "R-125",
+    id: "R-025",
     name: "Xue Flutter Sleeve Dress Dusk",
     category: "Dress",
     size: "S-L",
@@ -368,7 +368,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "S","M", "L"],
   },
   {
-    id: "R-126",
+    id: "R-026",
     name: "Bright Blue Regular Fit Textured Linen Blend Blazer",
     category: "Suit",
     size: "S-L",
@@ -381,7 +381,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "S","M", "L"],
   },
   {
-    id: "R-127",
+    id: "R-027",
     name: "Neutral Tailored Fit Linen Blend Texture Suit Jacket",
     category: "Suit",
     size: "S-L",
@@ -394,7 +394,7 @@ export const rentalCatalog: RentalItem[] = [
     sizes: [ "S","M", "L"],
   },
   {
-    id: "R-128",
+    id: "R-028",
     name: "Navy Blue Regular Fit Signature Nova Fides Italian Wool Suit Jacket",
     category: "Suit",
     size: "S-L",
