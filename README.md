@@ -319,4 +319,3 @@ This project is intended as a functional prototype, not just a static mockup. Th
 - Digital twin simulation for fleet logistics and route operations
 - Admin dashboards for tracking orders and decision-making
 
-The deployed site link should be added at the top of this README once hosting is finalized.
